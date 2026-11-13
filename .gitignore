@@ -1,0 +1,56 @@
+# Git ignore file for NOMA GPS Tracker
+
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+.pnp
+.pnp.js
+
+# Expo
+.expo/
+.expo-shared/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.env
+.env.local
+.env.*.local
+
+# Testing
+coverage/
+.jest/
+
+# Build artifacts
+*.jsbundle
+*.bundle
+
+# Native
+ios/Pods/
+android/.gradle/
+android/build/
+android/app/debug/
+android/app/release/
+
+# Temporary
+tmp/
+temp/
+*.log
+
+# OS-specific
+Thumbs.db
+.DS_Store
+*.pem
+*.key
+
+# Sensitive
+.env
+secrets/
+config/sensitive.json

@@ -1,0 +1,306 @@
+N O M A
+MOVE WITH INTENT.
+CAHIER DES CHARGES
+BACKEND & FONCTIONNEL
+Architecture cible, domaines métier, API, données, traitements et feuille de route
+Version 1.0 — 04 novembre 2026
+ 
+1. Contexte et périmètre réel
+NOMA dispose déjà d'une application mobile de suivi de course développée avec Expo SDK 58, React Native et TypeScript. Le présent document ne repart donc pas de zéro : il prend l'existant mobile comme point de départ et définit les services backend à ajouter, les contrats entre mobile et serveur, les règles métier à fiabiliser et les extensions à construire.
+Élément déjà développé côté mobile	État communiqué	Conséquence pour le backend
+Enregistrement GPS	Premier plan ; arrière-plan selon capacités et build EAS de développement. Pas Expo Go.	Le backend reçoit une activité finalisée ou des lots de points ; il ne remplace pas le GPS natif.
+Filtrage GPS	Points > 50 m d'incertitude et points trop proches < 5 m filtrés.	Conserver les données brutes utiles et la trace filtrée ; documenter les règles et versions d'algorithme.
+Écran Live	Distance, allure, durée, vitesse, dénivelé et carte.	Le calcul live reste prioritairement local pour réactivité ; serveur pour validation/recalcul différé.
+Contrôle de course	Pause, reprise, terminer, abandonner ; récupération d'une course sauvegardée.	Prévoir idempotence, sauvegarde locale et synchronisation différée.
+Records personnels	1 km, 1 mile, 3 km, 5 km, 10 km, semi, marathon, plus longue sortie ; historique et valeur précédente.	Le backend devient la référence de calcul multi-appareil et de conservation des PR.
+Segments personnels	Tronçons >= 400 m parcourus deux fois dans le même sens ; passages chronométrés.	Stocker la géométrie normalisée et les performances par segment ; versionner la détection.
+Insights	Volumes hebdo/mensuels, comparaison période précédente, allure et fréquence.	Calculs agrégés côté serveur, avec règles temporelles cohérentes.
+Analyse historique	Anciennes activités analysées au démarrage sans modification.	Créer une tâche de migration/recalcul non destructive, traçable et rejouable.
+Écrans	Home, Record, Activities, Insights, Records, détail activité.	Les endpoints doivent alimenter ces écrans sans dupliquer inutilement la logique métier.
+Design	Sand, Carbon, lime et corail ; Manrope et Inter ; graphiques sans bibliothèque.	Le backend reste indépendant de la présentation ; il renvoie des données et unités explicites.
+
+Important : les fonctionnalités ci-dessus sont considérées comme déjà présentes dans le client mobile, mais elles n'ont pas encore été validées sur un téléphone réel. Elles ne sont donc pas déclarées comme testées en conditions terrain. Ce document distingue systématiquement l'existant mobile, les services backend à créer et les fonctionnalités futures.
+2. Vision fonctionnelle de NOMA
+NOMA doit accompagner le coureur avant, pendant et après sa sortie. Le moteur de parcours est une brique centrale, mais le produit ne doit pas se réduire à un générateur de boucles. Le socle de valeur repose sur la continuité entre découverte de parcours, enregistrement fiable, analyse de progression et organisation des prochaines sorties.
+Moment	Besoin utilisateur	Capacité produit
+Avant	Où courir et comment préparer ma sortie ?	Explorer, générer, sauvegarder et exporter un parcours ; planifier une sortie.
+Pendant	Ma course est-elle bien enregistrée ?	GPS, suivi live, pause/reprise, récupération et fonctionnement dégradé hors réseau.
+Après	Qu'ai-je accompli et comment je progresse ?	Résumé, PR, segments, splits, statistiques, historique et tendances.
+Dans la durée	Comment rester régulier et trouver de la motivation ?	Calendrier, rappels, objectifs, communautés et événements à terme.
+
+3. Architecture technique cible
+Recommandation : commencer par un backend modulaire (monolithe modulaire) plutôt que par des microservices. Cela limite l'exploitation et permet de séparer clairement les domaines métier sans ajouter prématurément de complexité.
+Couche	Technologie cible proposée	Responsabilité
+API	Python + FastAPI + Pydantic	REST versionnée, validation, authentification, documentation OpenAPI.
+Base relationnelle	PostgreSQL	Comptes, activités, statistiques, records, segments, planification.
+Géospatial	PostGIS	Géométries, recherches spatiales, zones, distances et intersections.
+Moteur de routage	Abstraction provider + graphe OSM	Calcul de boucles, aller-retour, contraintes et score de qualité.
+Fichiers	Stockage objet compatible S3 (si nécessaire)	Exports GPX, traces originales, médias et exports utilisateur.
+Tâches asynchrones	Worker + file légère (à choisir selon charge)	Recalcul PR, agrégats, analyse historique, notifications.
+Cache	Redis optionnel	Cache de résultats de recherche, verrous et tâches si le besoin apparaît.
+Observabilité	Logs structurés, métriques, suivi d'erreurs	Diagnostic API, génération de parcours et synchronisation.
+
+L'architecture doit rester compatible avec le mobile Expo/React Native TypeScript. Le backend ne doit pas tenter de remplacer les capacités natives de localisation et de suivi. Il doit assurer la persistance serveur, la synchronisation, la cohérence des analyses et les fonctions multi-appareils.
+Organisation logique des modules
+Module	Responsabilités
+auth	Inscription, connexion, tokens, sessions, profil et préférences.
+activities	Création, import, synchronisation, consultation et suppression d'activités.
+gps_processing	Validation, normalisation, métriques recalculées et qualité de trace.
+personal_records	Détection, historisation et consultation des PR.
+segments	Détection/stockage des segments personnels et performances.
+analytics	Agrégats, tendances, comparaisons temporelles et insights.
+routes	Recherche, génération, scoring, sauvegarde et export GPX.
+training_plan	Calendrier, sorties prévues, objectifs et rappels.
+notifications	Préférences, rappels et notifications push.
+sync	Idempotence, reprise, conflits et statut de synchronisation.
+admin_ops	Santé des services, tâches, versions d'algorithmes et diagnostics.
+
+4. Modèle de données
+Les entités ci-dessous sont une proposition de modèle logique. Les noms et types exacts devront être alignés sur le schéma déjà présent dans le dépôt, après audit. Ne pas recréer une table si une structure équivalente existe.
+Entité	Champs principaux / rôle
+User	id, email/auth_provider, created_at, status, timezone, locale.
+UserProfile	user_id, display_name, avatar, preferred_units, preferences JSON contrôlé.
+Activity	id, user_id, client_activity_id, status, started_at, ended_at, duration, moving_time, distance_m, elevation_gain_m, avg_pace, avg_speed, source, algorithm_version.
+ActivityPoint	activity_id, sequence, timestamp, latitude, longitude, altitude, accuracy, speed, is_paused, point_quality.
+ActivityLap / Split	activity_id, index, distance_m, duration_ms, pace, elevation_gain_m.
+ActivityMetric	activity_id, metric_key, value, unit, calculation_version, calculated_at.
+PersonalRecord	user_id, record_type, best_value, activity_id, achieved_at, previous_value, algorithm_version.
+PersonalSegment	id, user_id, geometry, length_m, direction_hash, created_from_activity_id.
+SegmentEffort	segment_id, activity_id, start_time, duration_ms, direction, is_personal_best.
+Route	id, owner_id nullable, name, geometry, distance_m, elevation_gain_m, surface_summary, route_type, quality_score, data_warnings.
+RouteGenerationRequest	user_id, origin, target_distance, tolerance, surface, elevation_preference, loop_type, status, provider, created_at.
+PlannedRun	id, user_id, route_id nullable, planned_at, target_distance, notes, reminder_settings, status.
+WeeklyMetric	user_id, period_start, distance_m, duration_s, activity_count, elevation_gain_m.
+AlgorithmRun	entity_type, entity_id, algorithm_name, version, status, input_hash, output_summary, created_at.
+
+Géométries : utiliser les types spatiaux PostGIS adaptés (LineString/MultiLineString/Point) et définir un SRID cohérent, généralement WGS84 (4326) pour les coordonnées GPS. Indexer les colonnes géographiques et les clés de recherche.
+5. API — contrats fonctionnels proposés
+Toutes les routes API doivent être versionnées sous /api/v1. Les payloads doivent être validés, documentés et stables. Les endpoints ci-dessous sont une cible fonctionnelle, pas l'affirmation qu'ils existent déjà.
+Domaine	Méthode / endpoint	Objectif
+Auth	POST /auth/register ; POST /auth/login ; POST /auth/refresh ; POST /auth/logout	Cycle de session et renouvellement sécurisé.
+Profil	GET/PATCH /me	Profil, préférences et unités.
+Activités	POST /activities/sync	Créer ou synchroniser une activité finalisée ; idempotent via client_activity_id.
+Activités	GET /activities ; GET /activities/{id}	Historique paginé, filtres et détail.
+Activités	DELETE /activities/{id}	Suppression utilisateur avec cascade/effacement défini.
+GPS	POST /activities/{id}/points/batch	Envoi par lots si synchronisation progressive retenue.
+PR	GET /records ; GET /records/{type}	Records actuels, précédents et activité source.
+Segments	GET /segments ; GET /segments/{id}	Segments personnels et efforts associés.
+Insights	GET /insights/summary ; GET /insights/trends	Résumé semaine/mois et séries de données.
+Routes	POST /routes/generate	Créer une demande de génération.
+Routes	GET /routes/generate/{request_id}	Consulter statut et résultats de génération.
+Routes	GET /routes/{id} ; POST /routes/{id}/save	Détail et sauvegarde.
+Routes	GET /routes/{id}/export.gpx	Télécharger un GPX.
+Plan	GET/POST /planned-runs ; PATCH/DELETE /planned-runs/{id}	Planifier et gérer une sortie.
+Notifications	POST /devices ; PATCH /notification-preferences	Enregistrer token push et préférences.
+
+Les réponses doivent inclure des unités explicites, timestamps ISO 8601 avec timezone, pagination stable, codes d'erreur normalisés et identifiant de corrélation. Les endpoints de génération peuvent être asynchrones : retourner un request_id et un statut plutôt que bloquer une requête HTTP longue.
+6. Synchronisation mobile ↔ backend
+•	Le téléphone reste la source immédiate de l'enregistrement GPS pendant la course. L'app doit pouvoir terminer et sauvegarder une sortie même sans réseau.
+•	Chaque activité reçoit un identifiant client stable (UUID) dès sa création. Le serveur doit traiter une répétition de requête comme une mise à jour idempotente, pas comme une nouvelle course.
+•	Prévoir un état local : draft, recording, completed_pending_sync, synced, sync_failed.
+•	Envoyer l'activité finalisée en priorité ; envoyer les points GPS par lots si le volume l'exige. Compresser les traces si nécessaire.
+•	Le serveur valide les champs, conserve la provenance, normalise les données et lance les analyses en tâche de fond.
+•	Ne pas écraser silencieusement les données locales. En cas de conflit, définir une règle explicite et journaliser la décision.
+•	Prévoir retry exponentiel, reprise après fermeture de l'app, et affichage d'un statut clair à l'utilisateur.
+7. Domaine activité : calculs et règles
+Le backend doit recalculer ou vérifier les métriques à partir de la trace reçue afin de garantir la cohérence des statistiques entre appareils et versions de l'application. Les règles doivent être versionnées.
+Traitement	Règles fonctionnelles à définir
+Validation trace	Coordonnées valides, timestamps ordonnés, doublons, trous GPS, précision, points aberrants et pauses.
+Distance	Distance géodésique ou calcul géospatial cohérent ; conserver la distance client à titre de comparaison diagnostique.
+Temps	Distinguer durée écoulée, temps en mouvement et temps en pause.
+Allure / vitesse	Calculer sur des fenêtres robustes ; éviter les pics dus aux erreurs GPS ; unités normalisées.
+Dénivelé	Filtrer le bruit altimétrique ; indiquer si l'altitude est GPS ou corrigée par modèle externe.
+Splits	Découpage par distance exacte ; gérer les portions partielles en fin de course.
+Qualité	Produire des indicateurs de qualité de trace et expliquer les métriques non calculables.
+
+Ne pas modifier les activités historiques silencieusement. Tout recalcul doit conserver l'ancienne version des métriques ou permettre de reconstruire le résultat, avec version d'algorithme, date et motif.
+8. Records personnels (PR)
+•	Types initiaux : 1 km, 1 mile, 3 km, 5 km, 10 km, semi-marathon, marathon et plus longue sortie.
+•	Calculer les meilleurs temps sur une distance exacte glissante dans la trace, et non uniquement sur les splits kilométriques arrondis.
+•	Conserver la valeur précédente, le nouveau record, la date et l'activité source.
+•	Éviter les faux records causés par des traces trop courtes, des sauts GPS, une durée incohérente ou des données de mauvaise qualité.
+•	Définir la politique pour les activités importées, modifiées, supprimées ou recalculées.
+•	Le résumé post-course doit afficher les nouveaux PR confirmés, sans rejouer la célébration à chaque ouverture du détail.
+•	Le recalcul doit être idempotent : réexécuter le même traitement ne doit pas créer de nouveaux records artificiels.
+9. Segments personnels
+La fonctionnalité actuelle détecte des tronçons d'au moins 400 m parcourus deux fois dans le même sens et chronomètre les passages. Le backend doit permettre de rendre ce calcul persistant, reproductible et comparable.
+•	Normaliser les géométries et tolérances de correspondance entre deux passages.
+•	Définir le sens du segment et éviter de comparer deux directions opposées.
+•	Calculer le temps d'effort sur les points d'entrée/sortie interpolés, plutôt que sur les seuls points GPS les plus proches.
+•	Conserver les efforts et le meilleur temps personnel par segment.
+•	Ne pas créer de segment public automatiquement : la notion reste personnelle tant que le produit social n'est pas conçu.
+•	Versionner l'algorithme de détection et permettre une reconstruction non destructive.
+10. Insights et statistiques
+Vue	Données	Règle
+Résumé Home	Distance semaine, durée, nombre de sorties, dernière activité, dernière récompense.	Période selon timezone utilisateur ; semaine définie explicitement.
+Insights hebdo	Distance, durée, fréquence, dénivelé, allure moyenne.	Comparer avec la semaine précédente complète ou période équivalente.
+Insights mensuels	Volume et fréquence par semaine/mois.	Gérer mois incomplets et fuseaux horaires.
+Évolution allure	Série temporelle et/ou splits.	Comparer des contextes similaires lorsque possible.
+Segments	Meilleurs temps et évolution.	Comparer le même segment, même sens et même définition.
+PR	Valeur actuelle, précédente, date, activité source.	Unité et distance cible explicites.
+
+Les agrégats peuvent être calculés à la demande au début, puis matérialisés/cachés si le volume le justifie. Ne pas introduire prématurément une architecture analytique séparée.
+11. Générateur de parcours — domaine stratégique
+Le générateur doit transformer une intention simple en proposition de sortie exploitable. Il ne doit jamais confondre disponibilité de données cartographiques et garantie de sécurité.
+Entrées
+•	Point de départ : GPS autorisé, point choisi sur carte ou lieu recherché.
+•	Distance cible : presets 3, 5, 8, 10, 15 km et valeur personnalisée ; tolérance configurable.
+•	Type : boucle, aller-retour, point à point si le produit le permet.
+•	Surface : goudronné, mixte, chemin/terre si les données OSM sont suffisantes.
+•	Relief : plat, roulant, vallonné ; utiliser D+ estimé si disponible.
+•	Préférences optionnelles : éviter grands axes, privilégier bord de mer/parcs, éviter escaliers, etc. uniquement si les données permettent de les évaluer.
+Pipeline de génération
+1.	Valider le point de départ et les contraintes ; refuser les entrées impossibles avec une erreur compréhensible.
+2.	Charger le sous-graphe routable piéton/course dans la zone de recherche à partir des données OpenStreetMap.
+3.	Construire plusieurs candidats de parcours à partir du réseau, pas de lignes droites.
+4.	Évaluer distance, fermeture de boucle, répétitions, dénivelé estimé, types de voies et contraintes utilisateur.
+5.	Calculer un score multi-critères transparent et conserver les motifs de pénalité.
+6.	Écarter les candidats manifestement incohérents ; ne pas inventer les attributs absents.
+7.	Retourner les meilleurs candidats avec avertissements et indicateurs de confiance des données.
+8.	Permettre l'inspection, la sauvegarde et l'export GPX.
+Données cartographiques et sécurité
+•	OpenStreetMap est la source de départ envisagée ; conserver la date d'extraction et la licence/attribution requise.
+•	Prévoir une stratégie de mise à jour des données : extraction régionale, import, validation et reconstruction des graphes.
+•	Les tags OSM peuvent décrire highway, surface, smoothness, foot, access, lit, sidewalk, crossing et autres attributs lorsqu'ils existent.
+•	Les données de trottoirs et traversées peuvent être incomplètes à Tunis et dans d'autres zones. Absence de tag ≠ absence réelle de trottoir.
+•	Afficher les segments inconnus et les zones de couverture faible comme incertitudes, pas comme segments dangereux ou sûrs.
+•	Une future note de sécurité devra combiner données cartographiques, retours terrain et validation ; elle ne doit pas être publiée comme garantie.
+Scoring initial proposé
+Critère	Comportement
+Distance	Pénaliser l'écart à la cible selon une tolérance explicite.
+Boucle	Favoriser un retour au départ et limiter les allers-retours répétés.
+Surface	Favoriser les voies correspondant aux préférences ; pénaliser les inconnues plutôt que prétendre savoir.
+Dénivelé	Estimer D+ si données altimétriques fiables ; sinon afficher indisponible.
+Répétition	Pénaliser les segments parcourus plusieurs fois hors nécessité.
+Qualité des données	Réduire le score ou afficher un avertissement lorsque les attributs sont incomplets.
+
+La pondération exacte doit être calibrée par tests sur le terrain. Les scores ne doivent pas être affichés comme une note de sécurité tant que leur signification n'est pas validée.
+12. Planification et rappels
+•	Créer, modifier, déplacer et supprimer une sortie planifiée.
+•	Associer une date/heure, distance cible, parcours sauvegardé, note personnelle et rappel facultatif.
+•	Rappels push via service compatible Expo, avec gestion des tokens de périphérique et préférences.
+•	Respecter timezone, changement d'heure, permissions et désactivation des notifications.
+•	Ne pas envoyer de rappel si la sortie a été annulée ou marquée terminée.
+13. Modules futurs : AI, social et Gear
+Module	Fonctions candidates	Dépendances / conditions
+NOMA AI	Assistant qui comprend l'intention, résume les statistiques, suggère une sortie ou aide à planifier.	Données fiables, permissions explicites, réponses sourcées par les données NOMA ; pas de conseils médicaux.
+Gear	Catalogue de produits, variantes, tailles, stock et commandes si boutique activée.	Gestion commerciale, paiement, livraison, retours et conformité locale.
+
+Ces modules ne font pas partie du backend MVP. Préparer une architecture extensible, mais ne pas créer des tables et endpoints inutilisés avant validation produit.
+14. Sécurité, confidentialité et conformité
+•	Authentification avec access token court et refresh token rotatif ; stockage sécurisé côté mobile.
+•	Autorisation stricte par utilisateur : un compte ne peut lire, modifier ou supprimer que ses données.
+•	Ne jamais exposer les coordonnées GPS d'une activité à un autre utilisateur sans partage explicite.
+•	Protéger les endpoints contre abus, brute force et payloads trop volumineux ; limiter la fréquence des générations.
+•	Chiffrer les communications TLS ; protéger les secrets hors du dépôt ; ne jamais journaliser tokens ou coordonnées précises inutilement.
+•	Prévoir export et suppression des données personnelles, ainsi qu'une politique de rétention des traces GPS.
+•	Pour le social futur : partage de position désactivé par défaut, zones privées et contrôle de visibilité des activités.
+•	Respecter les licences et obligations d'attribution des données cartographiques et des services utilisés.
+15. Observabilité et exploitation
+Élément	À instrumenter
+API	Latence par endpoint, taux d'erreur, saturation, requêtes lentes.
+GPS sync	Taille des traces, échecs, retries, doublons, temps de traitement.
+Route engine	Temps de génération, taux de réussite, candidats rejetés, couverture de données.
+Jobs	Durée, erreurs, retries, versions d'algorithme, tâches bloquées.
+Données	Activités orphelines, métriques manquantes, géométries invalides.
+Sécurité	Échecs auth, accès interdits, limites de débit déclenchées.
+
+Prévoir /health pour l'état du processus et un endpoint de readiness vérifiant les dépendances nécessaires. Les logs doivent être structurés et corrélés par request_id.
+16. Tests et critères d'acceptation
+Domaine	Tests obligatoires
+Auth	Inscription/connexion, refresh, token expiré, accès inter-utilisateur interdit.
+Sync activité	Upload répété idempotent, réseau interrompu, activité volumineuse, ordre des points.
+GPS processing	Points aberrants, trous, pauses, précision faible, distance courte et longue.
+PR	Record exact, non-record, égalité, trace invalide, suppression activité, recalcul versionné.
+Segments	Même sens, sens inverse, segment partiel, GPS bruité, répétition et effort dupliqué.
+Insights	Semaine/mois, timezone, période vide, comparaison précédente.
+Routes	Boucle fermée, tolérance distance, aucune solution, surface inconnue, réseau discontinu.
+GPX	Fichier valide, coordonnées ordonnées, métadonnées et import dans outils compatibles.
+Plan	Création, modification, rappel, timezone, annulation et permission push refusée.
+Non-régression	Contrats API, migrations, typecheck mobile, tests unitaires et build.
+
+État actuel des tests communiqué : TypeScript tsc et Jest uniquement ; pas encore de validation sur téléphone réel. Avant de déclarer le suivi GPS fiable, prévoir des essais terrain sur Android et iOS, écran verrouillé, permission arrière-plan, faible batterie, perte réseau et reprise après fermeture.
+17. Feuille de route recommandée
+Sprint / étape	Objectif	Livrables
+S0 — Audit	Comprendre le code mobile et l'état réel du backend.	Cartographie des modules, schéma existant, dépendances, tests et gaps.
+S1 — Backend foundation	Créer le socle API et persistance.	FastAPI, PostgreSQL/PostGIS, config, migrations, health, auth et environnements.
+S2 — Sync activités	Persister les courses mobiles de façon robuste.	Contrat sync, idempotence, stockage points, historique et détail.
+S3 — Analytics & PR	Rendre les analyses cohérentes côté serveur.	Pipeline métriques, PR, splits, agrégats et recalcul non destructif.
+S4 — Segments	Persister et fiabiliser les segments personnels.	Géométries, efforts, records de segments, tests.
+S5 — Route engine	Générer des parcours de qualité sur une zone pilote.	Import OSM, graphe, candidats, scoring, avertissements et GPX.
+S6 — Planification	Ajouter l'organisation des sorties.	CRUD plan, calendrier, notifications et préférences.
+S7 — Stabilisation	Fiabilité, sécurité, terrain et déploiement.	Tests mobile réels, monitoring, sauvegardes, documentation et release.
+
+Ordre recommandé : ne pas commencer par NOMA AI, social ou Gear. Le plus grand risque produit est de construire des extensions avant d'avoir validé la fiabilité de la synchronisation, des analyses et des parcours.
+18. Prompt maître pour l'agent IA de développement
+Tu es un Staff Backend Engineer et Product Engineer chargé de faire évoluer NOMA. NOMA possède déjà une application mobile Expo SDK 58, React Native et TypeScript de suivi GPS. Ne reconstruis pas ce qui existe sans audit.
+
+CONTEXTE EXISTANT CÔTÉ MOBILE
+- Enregistrement GPS premier plan et suivi arrière-plan selon les capacités Expo/EAS.
+- Filtrage client : précision GPS > 50 m rejetée ; points trop proches < 5 m rejetés.
+- Live : distance, allure, durée, vitesse, dénivelé et carte.
+- Pause, reprise, terminer, abandonner ; récupération d'une course sauvegardée.
+- PR : 1 km, 1 mile, 3 km, 5 km, 10 km, semi, marathon et plus longue sortie.
+- Segments personnels >= 400 m, détectés après deux passages dans le même sens.
+- Insights hebdomadaires/mensuels, comparaison période précédente, allure et fréquence.
+- Analyse historique au démarrage, sans modification des activités.
+- Écrans : Home, Record, Activities, Insights, Records, détail activité.
+- Validation actuelle : tsc et Jest ; pas encore de test sur téléphone réel.
+Ton premier travail est de vérifier dans le dépôt ce qui est réellement implémenté et où les données sont stockées (local, backend ou hybride). Ne suppose pas qu'un backend existe déjà.
+
+OBJECTIF
+Mettre en place progressivement un backend robuste qui complète le mobile : synchronisation des activités, persistance, analyses serveur, records, segments, puis moteur de parcours, planification et extensions futures.
+
+ARCHITECTURE CIBLE À ÉVALUER
+- Backend modulaire, idéalement FastAPI + Pydantic si compatible avec le dépôt.
+- PostgreSQL + PostGIS pour données métier et géométries.
+- API REST versionnée /api/v1.
+- Abstraction du moteur de routage et des fournisseurs de données cartographiques.
+- Jobs asynchrones seulement là où ils sont nécessaires.
+- Stockage objet uniquement pour les fichiers/exports qui le justifient.
+Ne remplace pas les choix techniques existants sans démontrer le bénéfice et obtenir une validation.
+
+RÈGLES NON NÉGOCIABLES
+1. Audite avant de coder : dépôt, architecture, schéma, stockage actuel, navigation, services, algorithmes et tests.
+2. Sépare clairement les fonctionnalités déjà présentes sur mobile des fonctionnalités backend à créer.
+3. Ne duplique pas la logique GPS temps réel sur le serveur ; le mobile reste responsable de la capture.
+4. Définis une synchronisation idempotente avec client_activity_id, reprise réseau, batch upload et gestion des doublons.
+5. Le serveur doit recalculer/valider les métriques de façon versionnée sans écraser silencieusement les données historiques.
+6. Les PR doivent être calculés sur distance exacte et être reproductibles ; conserver valeur précédente et activité source.
+7. Les segments doivent tenir compte du sens, des tolérances GPS et de la qualité de trace.
+8. Le moteur de parcours doit utiliser un réseau routable réel, jamais des lignes droites ; exposer les inconnues et avertissements.
+9. Ne jamais présenter une route comme sûre si les données ne le démontrent pas.
+10. Respecter confidentialité des coordonnées GPS et autorisation par propriétaire.
+11. Pas de faux endpoints, données fictives présentées comme réelles ou intégrations inventées.
+12. Préserver la compatibilité du client Expo/React Native et documenter les changements de contrat.
+
+MÉTHODE
+Phase A — Audit : produire un état des lieux précis, les gaps et un diagramme d'architecture cible.
+Phase B — Contrats : définir schéma de données, migrations, modèles Pydantic, endpoints, erreurs et exemples JSON.
+Phase C — Fondation : config, health/readiness, logs, migrations, auth et tests.
+Phase D — Sync : upload activité idempotent, points GPS, historique et détail.
+Phase E — Analyses : métriques, PR, segments et agrégats ; traitements rejouables.
+Phase F — Routes : données OSM, graphe, génération, scoring, avertissements et GPX.
+Phase G — Plan : sorties planifiées et notifications.
+Phase H — Durcissement : sécurité, tests de charge raisonnables, sauvegardes, monitoring et documentation.
+
+À CHAQUE ÉTAPE
+- Présente un plan court et les fichiers concernés.
+- Implémente par petites unités testables.
+- Ajoute tests unitaires et tests d'intégration pertinents.
+- Exécute lint, typecheck, tests et build disponibles.
+- Mets à jour OpenAPI et la documentation.
+- Ne casse pas le mobile ; si un contrat change, mets à jour le client et les tests ensemble.
+- Fais des commits atomiques seulement si cela est autorisé par le workflow du dépôt.
+- Termine par : réalisé, non réalisé, tests exécutés, risques, décisions à valider et prochaine étape.
+
+COMMENCE UNIQUEMENT PAR LA PHASE A : AUDIT. Ne crée pas encore de nouveaux modules avant d'avoir rendu l'état des lieux et une proposition de plan adaptée au code réel.
+19. Décisions à confirmer après audit
+•	Le stockage actuel des activités est-il uniquement local, ou un backend partiel existe-t-il déjà ?
+•	Le backend FastAPI du Sprint 0 mentionné dans le projet est-il toujours la base retenue et dans quel dépôt se trouve-t-il ?
+•	Les PR et segments sont-ils calculés uniquement côté mobile, ou une pasrtie est-elle déjà mutualisée ?
+•	Quelle source altimétrique et quel moteur de routage seront utilisés en production ?
+•	Le suivi d'activité doit-il rester entièrement utilisable sans compte, avec synchronisation facultative ensuite ?
+•	Quel niveau de partage social est prévu : privé par défaut, partage ponctuel ou profils publics ?
+Conclusion
+La priorité backend n'est pas de déplacer toute l'application sur un serveur. Elle est de rendre les données durables, synchronisables et cohérentes, de fiabiliser les analyses multi-appareils, puis d'ajouter un moteur de parcours local crédible. Le mobile conserve la responsabilité du GPS live ; le backend devient la référence de persistance, de calcul versionné et de services partagés.

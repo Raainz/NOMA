@@ -1,0 +1,211 @@
+N O M A
+MOVE WITH INTENT.
+UI/UX DESIGN SYSTEM
+ET CAHIER DE CONCEPTION PRODUIT
+Spécification fonctionnelle, visuelle et prompt maître d'implémentation
+Version 1.0  |  04 novembre 2026
+ 
+1. Objectif du document
+Ce document transforme le guide de marque NOMA fourni en une référence concrète pour concevoir et développer l'application. Il décrit le langage visuel, les règles d'interface, les écrans, les états, les animations et les comportements attendus. Il se termine par un prompt maître à transmettre à un agent de développement IA.
+Principe directeur : NOMA doit donner envie de sortir courir, puis rendre cette sortie simple à préparer, agréable à suivre et valorisante à analyser. L'application doit avoir l'allure d'une marque running premium lifestyle, sans sacrifier la lisibilité ni la fiabilité.
+Principes produit
+•	Clarté avant densité : une action principale évidente par écran.
+•	Du mouvement, pas du bruit : animations courtes et utiles, jamais décoratives à outrance.
+•	Confiance : afficher ce qui est connu, signaler ce qui est estimé ou indisponible.
+•	Local d'abord : tenir compte des réalités des parcours et des données disponibles en Tunisie.
+•	Progression positive : célébrer les efforts, les sorties et les records sans culpabiliser.
+•	Une identité cohérente entre application, textile, accessoires et communication.
+2. ADN de marque et direction artistique
+Élément	Règle de marque / traduction UI
+Nom	NOMA — toujours en capitales dans le logo et les éléments de marque.
+Signature	MOVE WITH INTENT. À utiliser sur l'accueil, les écrans de marque et les supports de lancement.
+Positionnement	Hybrid performance × lifestyle : technique et fonctionnel, mais chaleureux, méditerranéen et accessible.
+Personnalité	Énergique, calme, précise, optimiste, indépendante, contemporaine.
+Univers visuel	Littoral, lumière dorée, topographie, lignes de parcours, mouvement humain, matières techniques.
+Logo	Wordmark NOMA espacé + petit accent corail. Symbole abstrait inspiré d'une trajectoire et du mouvement.
+À éviter	Esthétique fitness agressive, néons omniprésents, gradients flashy, surcharge de données, clichés sportifs génériques.
+
+Le guide montre une identité sombre et claire complémentaire : le carbone porte la performance et la profondeur ; le sable apporte respiration et éditorial ; le corail guide l'action ; le sauge marin et le bleu ciel installent l'univers outdoor/méditerranéen.
+3. Palette de couleurs
+Nom	HEX	Usage recommandé	Règle
+Carbone	#141916	Fond sombre, navigation active, texte fort, écran de course, surfaces premium.	Couleur d'ancrage. Ne pas l'utiliser partout en fond.
+Sable	#F5F1E8	Fond principal clair, panneaux, cartes, espaces éditoriaux.	Fond par défaut de la majorité des écrans.
+Corail	#FF704F	CTA, points d'intérêt, tracé actif, records, éléments sélectionnés.	Accent d'action. À doser, jamais en grandes surfaces systématiques.
+Sauge marine	#4C8F89	États secondaires positifs, nature, surfaces/indicateurs outdoor.	Accent de soutien, non concurrent du corail.
+Bleu ciel	#9CC8D8	Données météo/contextuelles, eau, horizons, éléments informatifs.	Usage ponctuel et doux.
+
+Couleurs fonctionnelles complémentaires recommandées :
+Token	Valeur	Usage
+Texte principal	#202522	Texte sur fond clair.
+Texte secondaire	#737A75	Descriptions, métadonnées, légendes.
+Surface claire	#FFFFFF	Cartes et champs sur fond sable.
+Bordure	#E5E0D6	Séparateurs discrets et contours.
+Succès	#267F7B	Confirmation, activité synchronisée, objectif atteint.
+Alerte	#D99A42	Avertissement non bloquant.
+Erreur	#C94F45	Erreur de saisie, échec d'action.
+Fond course	#101715	Mode course sombre, lisibilité en extérieur.
+
+Contraste : ne jamais placer du petit texte blanc sur le corail clair sans vérifier le contraste. Préférer texte carbone sur corail pour les petits libellés si le contraste est insuffisant. Les couleurs ne doivent jamais être le seul moyen de communiquer un état : ajouter icône et libellé.
+4. Typographie et iconographie
+Usage	Police	Règles
+Titres / chiffres / branding	Plus Jakarta Sans	Titres courts, semi-bold/bold ; chiffres de performance très lisibles.
+Texte courant / UI	Inter	Corps 14–16 px sur mobile ; interlignage confortable.
+Micro-labels	Inter	12–13 px, poids medium, capitales avec espacement modéré.
+
+Échelle typographique indicative : Display 34–40 px ; H1 28–32 px ; H2 22–24 px ; H3 18–20 px ; body 15–16 px ; secondary 13–14 px ; caption 11–12 px. Adapter à la taille d'écran et à l'accessibilité.
+Icônes : style linéaire, monoline, angles doux, cohérent avec les pictogrammes du guide. Utiliser des icônes simples pour localisation, itinéraire, relief, surface, calendrier, montre, sac, étoile/PR et profil. Éviter les mélanges de styles ou les emojis dans l'interface principale.
+5. Grille, formes et composants
+Composant	Spécification
+Grille mobile	Base 4/8 px ; marges latérales 20 px ; espacement vertical 16–24 px.
+Cartes	Fond blanc ou sable clair ; rayon 18–24 px ; ombre très légère ou bordure #E5E0D6.
+Bouton primaire	Corail ; texte carbone ou blanc selon contraste vérifié ; hauteur 52–56 px ; rayon 16–18 px.
+Bouton secondaire	Fond transparent/sable ; contour discret ; texte carbone.
+Chips / filtres	Pillules arrondies ; sélection avec contour ou fond corail pâle ; libellé toujours visible.
+Champs	Hauteur 48–52 px ; libellé persistant ; focus corail ; erreurs sous le champ.
+Bottom navigation	4 ou 5 destinations maximum ; icône + label ; fond sable ou carbone selon contexte.
+Graphiques	Peu de quadrillage ; données clés annotées ; corail pour la série principale, sauge/bleu pour comparaison.
+
+Les rayons doivent rester cohérents : 10–12 px pour petits contrôles, 16 px pour boutons, 20–24 px pour cartes et panneaux, 28 px pour grands panneaux/feuilles modales.
+6. Architecture de navigation
+Navigation principale recommandée pour le produit initial :
+Destination	Rôle	Contenu
+Accueil	Point d'entrée et motivation.	Salutation, raccourci démarrer, résumé de la semaine, suggestion de parcours.
+Explorer	Découvrir et préparer une sortie.	Carte, recherche, parcours recommandés, filtres, détail et sauvegarde.
+Activités	Historique et progression.	Activités enregistrées, détails, records personnels, segments et tendances.
+Plan	Organiser les sorties.	Calendrier, objectifs, rappels, sorties prévues.
+Profil	Compte et préférences.	Profil, objectifs, unités, confidentialité, appareils et réglages.
+
+NOMA AI et Gear peuvent être accessibles depuis des entrées secondaires au lancement. Ne pas encombrer la navigation principale tant que leur usage réel n'est pas validé.
+7. Inventaire détaillé des écrans
+7.1 Splash / lancement
+Logo NOMA centré sur fond carbone ou photographie littorale assombrie. Accent corail sous le wordmark. Transition courte vers l'accueil. Ne pas prolonger artificiellement l'écran.
+7.2 Onboarding — bienvenue
+Grand visuel lifestyle en haut ou en arrière-plan ; titre « Discover your route » / équivalent français selon langue ; promesse claire ; bouton « Commencer ». 2 à 3 étapes maximum.
+7.3 Onboarding — préférences
+Collecter uniquement les préférences utiles : distance habituelle, type de parcours, surface, relief, unité km/mi. Autoriser le passage sans réponse.
+7.4 Autorisation de localisation
+Expliquer pourquoi la position est utile avant de déclencher la permission système. Proposer « Choisir sur la carte » en alternative. Ne jamais bloquer l'application si refus.
+7.5 Accueil
+Hero éditorial avec message motivant, bouton principal « Préparer une sortie » ou « Démarrer », carte/suggestion du jour, résumé hebdomadaire et dernière activité. Conserver un espace visuel généreux.
+7.6 Explorer / carte
+Carte grand format intégrée ; point de départ déplaçable ; recherche de lieu ; marqueurs lisibles ; panneau inférieur rétractable contenant filtres et résultats. Contrôles de carte accessibles au pouce.
+7.7 Créer un parcours
+Distance cible (ex. 3, 5, 8, 10, 15 km), boucle ou aller-retour, surface (goudron, mixte, tout-terrain si données), dénivelé (plat, roulant, vallonné), point de départ. Afficher les critères sélectionnés avant génération.
+7.8 Génération en cours
+Carte conservée en arrière-plan avec animation discrète du tracé qui se dessine. Messages d'étapes honnêtes : analyse du réseau, recherche de boucle, vérification des critères. Bouton annuler si l'opération dure.
+7.9 Résultats de parcours
+Liste de 2 à 4 propositions si disponibles ; distance, dénivelé, type de surface, durée estimée clairement identifiée comme estimation, qualité/couverture des données et avertissements. Vue carte + liste.
+7.10 Détail d'un parcours
+Carte dominante, nom du parcours, distance, dénivelé, surface, profil altimétrique si fiable, points remarquables, avertissements, bouton sauvegarder, exporter GPX ou démarrer.
+7.11 Mode course / suivi
+Interface sombre, contraste élevé, gros chiffres : distance, temps, allure. Contrôles pause/reprise/terminer faciles à atteindre. Écran lisible en mouvement ; éviter les informations secondaires.
+7.12 Fin d'activité / résumé
+Distance, durée, allure moyenne, dénivelé si disponible, carte du tracé. Résumé positif. Détecter les records personnels par distance ou segment, avec une animation de célébration mesurée.
+7.13 Activités / historique
+Liste chronologique, filtres par période/type, cartes compactes et indicateurs clés. États vide, chargement, erreur et données synchronisées.
+7.14 Détail activité
+Carte, splits/allures, évolution de l'allure, dénivelé, notes, conditions si disponibles, segments parcourus et records associés. Comparaison avec activité précédente uniquement si pertinente.
+7.15 Records personnels (PR)
+Regrouper records par distance standard et segments. Montrer date, valeur, progression et activité source. À chaque nouveau PR, afficher une carte de réussite à la fin de l'activité, puis l'ajouter à l'historique.
+7.16 Analyses / statistiques
+Volumes hebdomadaires/mensuels, fréquence, distance, durée, allure et tendances. Graphiques sobres, période sélectionnable, explication des métriques. Pas de classement social par défaut.
+7.17 Analyse de segment
+Nom du segment, carte, distance, dénivelé, meilleur temps personnel, dernière tentative et évolution. Distinguer clairement record personnel et classement global si ce dernier existe.
+7.18 Plan / calendrier
+Vue semaine/mois, sorties planifiées, rappels configurables, bouton ajouter une sortie. Prévisualisation des détails de la sortie et possibilité de déplacer/supprimer.
+7.19 NOMA AI — assistant
+Interface conversationnelle simple, exemples de demandes contextualisées (« propose une sortie facile de 5 km »). Les recommandations doivent citer les données disponibles et signaler les incertitudes.
+7.20 Gear / boutique (phase ultérieure)
+Catalogue éditorial, fiches produit, tailles, matériaux, usage, photos cohérentes avec le guide. Ne pas simuler une boutique active si aucun produit n'est disponible.
+7.21 Profil et paramètres
+Données du compte, objectifs, préférences, unités, permissions, confidentialité, export/suppression des données, appareils connectés.
+7.22 États système
+Écrans ou panneaux dédiés pour absence de réseau, GPS indisponible, permission refusée, aucun parcours correspondant, échec de génération, synchronisation en attente.
+8. Écrans d'attente, chargement et états vides
+Les états d'attente doivent être conçus comme de vrais écrans de produit, pas comme un spinner générique. Toujours expliquer ce qui se passe et conserver le contexte.
+État	Présentation	Comportement
+Chargement initial	Skeletons de cartes et blocs de texte, logo discret si attente longue.	Éviter le flash d'écran vide ; afficher le contenu dès qu'il est prêt.
+Génération d'itinéraire	Tracé animé progressivement sur la carte ; étapes textuelles courtes.	Messages factuels ; timeout et option réessayer/annuler.
+Localisation	Pulsation douce autour du point de position et libellé « Localisation en cours… ».	Si refus/échec : proposer saisie manuelle ou choix sur carte.
+Enregistrement activité	Indicateur compact « Enregistrement… » et progression si connue.	Ne pas perdre les données en cas de réseau instable ; afficher statut local/synchronisé.
+Synchronisation	Icône discrète et statut « En attente de synchronisation ».	Reprise automatique ; action manuelle si nécessaire.
+Aucun résultat	Illustration topographique légère ; texte qui explique pourquoi.	Permettre d'élargir distance, surface, relief ou zone.
+Historique vide	Message accueillant + CTA « Enregistrer ma première sortie ».	Ne pas présenter l'absence d'activité comme un échec.
+Erreur	Icône simple, phrase compréhensible et action de récupération.	Préserver les paramètres déjà saisis.
+
+Microcopy suggérée : « On prépare votre parcours… », « On cherche une boucle qui correspond à vos critères », « Les données de cette zone sont partielles », « Aucun parcours fiable trouvé avec ces critères. Essayez d'élargir la recherche. »
+9. Animations et micro-interactions
+Interaction	Animation	Durée / règle
+Ouverture d'écran	Fondu léger + translation verticale de quelques pixels.	180–240 ms ; pas d'effet spectaculaire.
+Bouton pressé	Léger scale down puis retour ; état tactile clair.	100–140 ms.
+Sélection d'un filtre	Transition douce de fond/contour et apparition d'une coche.	140–180 ms.
+Carte / bottom sheet	Glissement vertical avec inertie douce.	220–300 ms ; respecter les gestes natifs.
+Tracé d'itinéraire	Ligne corail qui se révèle le long du chemin.	600–1000 ms ; seulement à la première apparition.
+Point de localisation	Halo pulsant subtil.	Cycle 1.8–2.4 s ; réduire l'animation si économie d'énergie.
+Nouveau PR	Accent corail, petite célébration graphique/topographique et haptique si disponible.	500–800 ms ; une fois par nouveau record.
+Graphiques	Apparition progressive des barres/lignes.	250–450 ms ; pas de relecture à chaque petit rerender.
+Skeleton	Shimmer très doux ou simple pulsation de luminosité.	1.2–1.6 s ; désactivable via reduced motion.
+
+Accessibilité : respecter prefers-reduced-motion ; toutes les animations doivent avoir un état final immédiat sans animation. Ne jamais utiliser le mouvement pour signaler une information critique sans libellé complémentaire.
+10. Cartographie, itinéraires et fiabilité
+•	La carte est un élément central du produit, mais elle ne doit pas masquer les critères ni les informations essentielles.
+•	Afficher les limites des données cartographiques : surface, trottoirs, traversées et sécurité peuvent être incomplets selon les quartiers.
+•	Ne jamais afficher une note de sécurité comme une vérité si elle n'est pas appuyée par des données fiables et/ou retours terrain.
+•	Séparer les faits observés, les estimations et les avertissements. Exemple : « surface estimée » plutôt que « 100 % goudron » si la donnée n'est pas vérifiée.
+•	En cas de segment avec données insuffisantes, afficher un avertissement explicite avant que l'utilisateur adopte le parcours.
+•	La distance réelle peut différer de la distance cible : afficher la distance calculée et la tolérance acceptée.
+•	Prévoir le mode hors-ligne ou une dégradation propre lorsque la carte ou le réseau ne répond pas.
+11. Données et règles d'affichage des statistiques
+Métrique	Affichage	Précaution
+Distance	km par défaut ; une décimale si utile.	Ne pas arrondir de manière à masquer les écarts.
+Durée	hh:mm:ss ou mm:ss selon durée.	Temps écoulé et temps en mouvement doivent être distingués.
+Allure	min/km, valeur moyenne et splits.	Ne pas mélanger allure et vitesse.
+Dénivelé	m de D+ si source disponible.	Indiquer « estimé » si calculé à partir d'une donnée altimétrique incertaine.
+Records	PR par distance standard et par segment.	Comparer des métriques homogènes ; date et activité source visibles.
+Tendances	Périodes semaine/mois ; évolution en valeur absolue et relative.	Éviter les jugements ou messages culpabilisants.
+
+Les analyses doivent rester descriptives et encourageantes. Elles ne doivent pas présenter des conseils médicaux ou des objectifs d'entraînement personnalisés sans base appropriée.
+12. Responsive, accessibilité et ergonomie
+•	Mobile-first : priorité à une utilisation à une main et aux zones tactiles d'au moins 44 × 44 px.
+•	Web desktop : utiliser une grille plus large avec carte et panneau de contrôle côte à côte ; ne pas étirer les cartes mobiles sur toute la largeur.
+•	Mobile web : prévoir des panneaux bas, des contrôles accessibles au pouce et une carte qui conserve une hauteur utile.
+•	Contraste conforme aux bonnes pratiques WCAG ; taille de texte redimensionnable ; ne pas coder une information uniquement par couleur.
+•	Textes courts, verbes d'action explicites et libellés cohérents en français. Préparer l'internationalisation sans concaténer des fragments de phrases.
+•	Prévoir états de permission, réseau, GPS, données vides et erreurs dans chaque flux critique.
+13. Ton rédactionnel et microcopy
+Contexte	À privilégier	À éviter
+Accueil	« Votre prochaine sortie commence ici. »	« Vous n'avez pas couru cette semaine ! »
+Génération	« On cherche un parcours adapté à vos critères. »	« Intelligence artificielle en cours… » sans explication.
+Données partielles	« Certaines informations du parcours restent à vérifier. »	« Parcours 100 % sûr » sans preuve.
+PR	« Nouveau record personnel sur 5 km. »	Comparaison culpabilisante avec les autres.
+Erreur	« Impossible de charger la carte. Réessayez ou continuez sans carte. »	Codes techniques bruts.
+
+14. Priorisation de réalisation
+Priorité	Périmètre	Livrable attendu
+P0 — Fondations	Design tokens, typographie, composants, navigation, responsive, états système.	Base UI cohérente et réutilisable.
+P1 — Cœur NOMA	Accueil, Explorer, création, génération, résultats, détail, export GPX.	Parcours complet de découverte et préparation d'une sortie.
+P2 — Activité	Suivi ou import d'activité, historique, détail, statistiques, PR et segments.	Boucle d'usage après la sortie.
+P3 — Organisation	Plan, calendrier, rappels et objectifs.	Aide à installer une routine.
+P4 — Extensions	NOMA AI, Gear, social/communautés et événements.	À développer après validation des usages fondamentaux.
+
+Recommandation : ne pas construire tous les modules simultanément. Livrer une expérience de parcours fiable et agréable, puis ajouter les analyses d'activité et la planification en fonction des retours réels.
+15. Critères d'acceptation UI
+•	Les couleurs, polices, rayons, espacements et composants sont centralisés en tokens.
+•	Chaque écran possède un état normal, chargement, vide, erreur et permission pertinente.
+•	Les filtres et formulaires restent utilisables sur petit écran.
+•	La carte et les résultats restent lisibles sans chevauchement.
+•	Les données estimées ou incomplètes sont identifiées explicitement.
+•	Les animations respectent reduced motion et ne bloquent aucune interaction.
+•	Les boutons ont un état loading/disabled/success adapté et ne simulent pas une action non réalisée.
+•	Les écrans d'activité affichent les unités et la période de comparaison.
+•	Un nouveau PR est identifié de façon reproductible et présenté une seule fois dans le résumé concerné.
+•	Aucun écran ne contient de faux chiffres, faux parcours ou fausses données de sécurité en production.
+16. Références de validation visuelle
+•	Comparer chaque écran au guide de marque : le résultat doit évoquer la même famille visuelle, pas reproduire littéralement le collage de référence.
+•	Vérifier l'interface sur au moins un petit mobile, un grand mobile et un écran desktop.
+•	Tester le parcours complet : accueil → création → génération → résultat → détail → sauvegarde/export.
+•	Tester les états sans GPS, sans réseau, sans résultat et avec données cartographiques partielles.
+•	Faire relire les écrans par quelques runners débutants et réguliers : compréhension immédiate, confiance dans le parcours et envie de l'utiliser.
+Annexe — décision de design à retenir
+NOMA ne doit pas ressembler à un tableau de bord sportif traditionnel. Son interface doit combiner l'élégance d'une marque lifestyle, la précision d'un outil de running et la chaleur d'un univers méditerranéen. Le parcours est le cœur du produit ; les statistiques, les records et la planification prolongent l'expérience avant et après la course.
+Règle finale : chaque écran doit répondre à une question simple du coureur — où aller, comment s'y préparer, comment suivre ma sortie, ou qu'est-ce que j'apprends de ma progression ?
