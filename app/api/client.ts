@@ -22,6 +22,66 @@ export interface ApiUser {
   preferred_units: string;
   timezone: string;
   locale: string;
+  handle: string | null;
+  city: string | null;
+  level: Level | null;
+  bio: string | null;
+  avatar_url: string | null;
+  is_public: boolean;
+  privacy_zone_m: number;
+}
+
+export type Level = 'debutant' | 'intermediaire' | 'confirme';
+export type Visibility = 'private' | 'followers' | 'public';
+
+/** Fields left out are untouched; city, level and bio accept null to clear them. */
+export interface ProfilePatch {
+  handle?: string;
+  display_name?: string | null;
+  city?: string | null;
+  level?: Level | null;
+  bio?: string | null;
+  is_public?: boolean;
+  privacy_zone_m?: number;
+}
+
+export interface RunnerSummary {
+  id: string;
+  handle: string;
+  display_name: string | null;
+  city: string | null;
+  level: Level | null;
+  avatar_url: string | null;
+  is_following: boolean;
+}
+
+export interface RunnerProfile extends RunnerSummary {
+  bio: string | null;
+  followers_count: number;
+  following_count: number;
+  /** Counted over what the viewer is allowed to see. */
+  activities_count: number;
+  total_distance_m: number;
+  is_me: boolean;
+  created_at: string;
+}
+
+export interface RunnerActivity {
+  id: string;
+  name: string;
+  started_at: string;
+  duration_s: number;
+  moving_time_s: number;
+  distance_m: number;
+  elevation_gain_m: number;
+  avg_pace_s_per_km: number | null;
+  avg_speed_kmh: number;
+  visibility: Visibility;
+}
+
+export interface Page<T> {
+  items: T[];
+  next_cursor: string | null;
 }
 
 export interface SyncPoint {
@@ -78,6 +138,14 @@ interface SendOptions {
 }
 
 const API_PREFIX = '/api/v1';
+
+/** Builds "?a=1&b=2" from the defined, non-empty values (empty string when there are none). */
+function query(params: Record<string, string | number | null | undefined>): string {
+  const parts = Object.entries(params)
+    .filter(([, v]) => v !== undefined && v !== null && v !== '')
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
+  return parts.length ? `?${parts.join('&')}` : '';
+}
 
 export function createApiClient(opts: ApiClientOptions) {
   const doFetch: typeof fetch = opts.fetchImpl ?? ((...args) => fetch(...args));
@@ -220,6 +288,47 @@ export function createApiClient(opts: ApiClientOptions) {
     async syncActivity(payload: SyncPayload): Promise<SyncResult> {
       const { status, data } = await send('/activities/sync', { method: 'POST', body: payload });
       return { status, activity: data };
+    },
+
+    async updateProfile(patch: ProfilePatch): Promise<ApiUser> {
+      return (await send('/me/profile', { method: 'PATCH', body: patch })).data as ApiUser;
+    },
+
+    async searchRunners(params: { q?: string; city?: string; cursor?: string | null; limit?: number } = {}): Promise<Page<RunnerSummary>> {
+      return (await send(`/users${query(params)}`)).data as Page<RunnerSummary>;
+    },
+
+    async runnerProfile(handle: string): Promise<RunnerProfile> {
+      return (await send(`/users/${encodeURIComponent(handle)}`)).data as RunnerProfile;
+    },
+
+    async runnerActivities(handle: string, params: { cursor?: string | null; limit?: number } = {}): Promise<Page<RunnerActivity>> {
+      return (await send(`/users/${encodeURIComponent(handle)}/activities${query(params)}`)).data as Page<RunnerActivity>;
+    },
+
+    async follow(userId: string): Promise<{ is_following: boolean; followers_count: number }> {
+      return (await send(`/users/${userId}/follow`, { method: 'POST' })).data;
+    },
+
+    async unfollow(userId: string): Promise<void> {
+      await send(`/users/${userId}/follow`, { method: 'DELETE' });
+    },
+
+    async following(cursor?: string | null): Promise<Page<RunnerSummary>> {
+      return (await send(`/me/following${query({ cursor })}`)).data as Page<RunnerSummary>;
+    },
+
+    async followers(cursor?: string | null): Promise<Page<RunnerSummary>> {
+      return (await send(`/me/followers${query({ cursor })}`)).data as Page<RunnerSummary>;
+    },
+
+    async activityVisibility(activityId: string): Promise<Visibility> {
+      return (await send(`/activities/${activityId}`)).data.visibility as Visibility;
+    },
+
+    /** `activityId` is the server id (see SyncContext.serverIdOf), not the local one. */
+    async setActivityVisibility(activityId: string, visibility: Visibility): Promise<void> {
+      await send(`/activities/${activityId}/visibility`, { method: 'PATCH', body: { visibility } });
     },
   };
 }

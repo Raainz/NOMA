@@ -18,6 +18,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, displayName?: string) => Promise<void>;
   logout: () => Promise<void>;
+  /** Re-reads the account from the server (after a profile change). */
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await api.register(email.trim().toLowerCase(), password, displayName?.trim() || undefined);
         await afterSignIn();
       },
+      refreshUser: loadProfile,
       logout: async () => {
         await api.logout();
         await AsyncStorage.removeItem(USER_CACHE_KEY).catch(() => undefined);
@@ -84,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setStatus('signedOut');
       },
     }),
-    [status, user, afterSignIn]
+    [status, user, afterSignIn, loadProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

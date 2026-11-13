@@ -119,3 +119,57 @@ describe('api client', () => {
     expect(store.current).toBeNull();
   });
 });
+
+describe('api client: social (M2)', () => {
+  const setup = (res: Response) => {
+    const store = memoryStore({ accessToken: 'a', refreshToken: 'r' });
+    const fetchImpl = jest.fn().mockResolvedValue(res);
+    const api = createApiClient({ baseUrl: 'http://x', tokenStore: store, fetchImpl: fetchImpl as any });
+    return { api, fetchImpl };
+  };
+
+  it('updateProfile PATCHes /me/profile with only the given fields', async () => {
+    const { api, fetchImpl } = setup(json(200, { handle: 'amine' }));
+    await api.updateProfile({ handle: 'amine', city: null });
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe('http://x/api/v1/me/profile');
+    expect(init.method).toBe('PATCH');
+    expect(JSON.parse(init.body)).toEqual({ handle: 'amine', city: null });
+  });
+
+  it('searchRunners builds the query string and skips empty values', async () => {
+    const { api, fetchImpl } = setup(json(200, { items: [], next_cursor: null }));
+    await api.searchRunners({ q: 'am', city: '', cursor: null, limit: 10 });
+    expect(fetchImpl.mock.calls[0][0]).toBe('http://x/api/v1/users?q=am&limit=10');
+    await api.searchRunners();
+    expect(fetchImpl.mock.calls[1][0]).toBe('http://x/api/v1/users');
+  });
+
+  it('encodes characters in handles and cursors', async () => {
+    const { api, fetchImpl } = setup(json(200, { items: [], next_cursor: null }));
+    await api.runnerActivities('a/b', { cursor: 'x=y&z' });
+    expect(fetchImpl.mock.calls[0][0]).toBe('http://x/api/v1/users/a%2Fb/activities?cursor=x%3Dy%26z');
+  });
+
+  it('follow and unfollow use POST and DELETE on the user id', async () => {
+    const { api, fetchImpl } = setup(json(201, { is_following: true, followers_count: 1 }));
+    expect(await api.follow('u1')).toEqual({ is_following: true, followers_count: 1 });
+    expect(fetchImpl.mock.calls[0][1].method).toBe('POST');
+    const { api: api2, fetchImpl: f2 } = setup({ ok: true, status: 204, json: async () => undefined } as unknown as Response);
+    await api2.unfollow('u1');
+    expect(f2.mock.calls[0][0]).toBe('http://x/api/v1/users/u1/follow');
+    expect(f2.mock.calls[0][1].method).toBe('DELETE');
+  });
+
+  it('setActivityVisibility sends the chosen level', async () => {
+    const { api, fetchImpl } = setup(json(200, {}));
+    await api.setActivityVisibility('s1', 'followers');
+    expect(fetchImpl.mock.calls[0][0]).toBe('http://x/api/v1/activities/s1/visibility');
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toEqual({ visibility: 'followers' });
+  });
+
+  it('surfaces server error codes for the UI (handle_taken)', async () => {
+    const { api } = setup(json(409, { error: { code: 'handle_taken', message: 'taken' } }));
+    await expect(api.updateProfile({ handle: 'x_1' })).rejects.toMatchObject({ status: 409, code: 'handle_taken' });
+  });
+});

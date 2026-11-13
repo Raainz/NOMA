@@ -3,7 +3,21 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, BigInteger, DateTime, Float, ForeignKey, Index, Integer, String, UniqueConstraint, Uuid
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import TypeDecorator
 
@@ -44,6 +58,30 @@ class User(Base):
     timezone: Mapped[str] = mapped_column(String(64), default="UTC")
     locale: Mapped[str] = mapped_column(String(16), default="fr")
     status: Mapped[str] = mapped_column(String(16), default="active")
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=_now)
+
+    # Social profile (M2). Private by default: nothing is visible until `is_public` is set.
+    handle: Mapped[str | None] = mapped_column(String(30), unique=True, index=True)
+    city: Mapped[str | None] = mapped_column(String(80))
+    level: Mapped[str | None] = mapped_column(String(16))  # debutant / intermediaire / confirme
+    bio: Mapped[str | None] = mapped_column(Text)
+    avatar_url: Mapped[str | None] = mapped_column(String(500))
+    is_public: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Metres hidden at both ends of a trace before anyone else can see it.
+    privacy_zone_m: Mapped[int] = mapped_column(Integer, default=200)
+
+
+class Follow(Base):
+    """`follower_id` follows `followed_id`. Immediate (no approval) at the MVP stage."""
+
+    __tablename__ = "follows"
+    __table_args__ = (
+        CheckConstraint("follower_id != followed_id", name="ck_follow_not_self"),
+        Index("ix_follows_followed", "followed_id"),
+    )
+
+    follower_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    followed_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=_now)
 
 
@@ -90,6 +128,8 @@ class Activity(Base):
     input_hash: Mapped[str] = mapped_column(String(64))
     source: Mapped[str] = mapped_column(String(32), default="mobile")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=_now)
+    # private (owner only) / followers / public. Always private until the owner decides otherwise.
+    visibility: Mapped[str] = mapped_column(String(16), default="private", server_default="private")
 
     points: Mapped[list["ActivityPoint"]] = relationship(
         back_populates="activity", cascade="all, delete-orphan", order_by="ActivityPoint.seq"

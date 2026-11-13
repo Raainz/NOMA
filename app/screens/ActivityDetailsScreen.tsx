@@ -11,6 +11,7 @@ import { StatisticsService } from '../services/StatisticsService';
 import { useAnalytics } from '../context/AnalyticsContext';
 import { useSync } from '../context/SyncContext';
 import { SyncBadge } from '../components/SyncBadge';
+import { VisibilityCard } from '../components/VisibilityCard';
 import { RouteMap } from '../components/RouteMap';
 import { Badge, Button, Card, FadeInView, NOMA_COLORS } from '../components/UIComponents';
 import { ElevationChart, LineChart } from '../components/Charts';
@@ -250,6 +251,9 @@ export const ActivityDetailsScreen: React.FC<{ route: { params: { activityId: st
           )}
         </Card>
 
+        <VisibilityCard activityId={activity.id} />
+
+        <View style={{ height: 16 }} />
         <Button label="Partager" onPress={share} variant="secondary" size="large" />
       </ScrollView>
     </SafeAreaView>

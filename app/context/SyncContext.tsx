@@ -40,6 +40,8 @@ interface SyncContextType {
   lastError: string | null;
   /** Sync state of one activity ('pending' until it has been uploaded). */
   statusOf: (activityId: string) => SyncStatus;
+  /** Server id of an uploaded activity (needed to share it), undefined until it is synced. */
+  serverIdOf: (activityId: string) => string | undefined;
   syncNow: () => Promise<void>;
   retryFailed: () => Promise<void>;
 }
@@ -105,6 +107,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
       syncing,
       lastError,
       statusOf: (id: string): SyncStatus => state[id]?.status ?? 'pending',
+      serverIdOf: (id: string) => (state[id]?.status === 'synced' ? state[id]?.serverId : undefined),
       syncNow: () => run(true),
       retryFailed: async () => {
         await syncService.retryFailed();

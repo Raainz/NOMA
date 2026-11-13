@@ -31,4 +31,15 @@ describe('French strings', () => {
     expect(monthName(12)).toBe('janvier');
     expect(monthName(-1)).toBe('décembre');
   });
+
+  it('has a message for every social error the server can return', () => {
+    for (const code of ['handle_taken', 'handle_required', 'profile_not_public', 'validation_error', 'not_found', 'cannot_follow_self', 'fallback']) {
+      expect(fr.social.errors[code]).toBeTruthy();
+    }
+  });
+
+  it('pluralizes follower counts', () => {
+    expect(fr.social.followers(1)).toBe('1 abonné');
+    expect(fr.social.followers(3)).toBe('3 abonnés');
+  });
 });

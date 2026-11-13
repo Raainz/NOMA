@@ -16,7 +16,7 @@ from app.db import get_db
 from app.deps import get_current_user
 from app.errors import AppError
 from app.models import Activity, ActivityPoint, User
-from app.schemas import ActivityDetailOut, ActivityListOut, ActivityOut, ActivitySyncIn, PointOut
+from app.schemas import ActivityDetailOut, ActivityListOut, ActivityOut, ActivitySyncIn, PointOut, VisibilityIn
 from app.services.metrics import ALGORITHM_VERSION, Point, compute_metrics
 
 router = APIRouter(prefix="/activities", tags=["activities"])
@@ -182,6 +182,22 @@ def get_activity(
             for p in activity.points
         ]
     return ActivityDetailOut(**base, points=points)
+
+
+@router.patch("/{activity_id}/visibility", response_model=ActivityOut)
+def set_visibility(
+    activity_id: uuid.UUID,
+    body: VisibilityIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Owner only. Sharing needs a public profile: otherwise nobody could see the activity anyway."""
+    activity = _owned(db, user, activity_id)
+    if body.visibility != "private" and not user.is_public:
+        raise AppError(409, "profile_not_public", "Make your profile public before sharing activities")
+    activity.visibility = body.visibility
+    db.commit()
+    return activity
 
 
 @router.delete("/{activity_id}", status_code=204)

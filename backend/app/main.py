@@ -5,7 +5,7 @@ import logging
 from fastapi import FastAPI
 
 from app import errors
-from app.routers import activities, auth, health, me
+from app.routers import activities, auth, health, me, users
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
@@ -16,3 +16,4 @@ app.include_router(health.router)
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(me.router, prefix="/api/v1")
 app.include_router(activities.router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1")

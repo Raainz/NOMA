@@ -499,7 +499,11 @@ export const TextInput: React.FC<{
   value: string;
   onChangeText: (text: string) => void;
   style?: ViewStyle;
-}> = ({ placeholder, value, onChangeText, style }) => {
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCorrect?: boolean;
+  multiline?: boolean;
+  maxLength?: number;
+}> = ({ placeholder, value, onChangeText, style, autoCapitalize, autoCorrect, multiline, maxLength }) => {
   return (
     <View
       style={{
@@ -516,10 +520,15 @@ export const TextInput: React.FC<{
         placeholderTextColor={NOMA_COLORS.textSecondary}
         value={value}
         onChangeText={onChangeText}
+        autoCapitalize={autoCapitalize}
+        autoCorrect={autoCorrect}
+        multiline={multiline}
+        maxLength={maxLength}
         style={{
           color: NOMA_COLORS.text,
           paddingVertical: 12,
           fontSize: 14,
+          ...(multiline ? { minHeight: 80, textAlignVertical: 'top' as const } : {}),
         }}
       />
     </View>

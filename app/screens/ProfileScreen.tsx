@@ -11,6 +11,7 @@ import { ScreenTitle } from '../components/Blocks';
 import { useSummaries } from '../hooks/useSummaries';
 import { useAuth } from '../context/AuthContext';
 import { useSync } from '../context/SyncContext';
+import { fr } from '../i18n/fr';
 
 type Perm = 'granted' | 'denied' | 'undetermined';
 
@@ -21,7 +22,7 @@ const Row: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value
   </View>
 );
 
-export const ProfileScreen: React.FC = () => {
+export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [perm, setPerm] = useState<Perm>('undetermined');
   const { summaries } = useSummaries();
   const { user, logout } = useAuth();
@@ -71,6 +72,27 @@ export const ProfileScreen: React.FC = () => {
         </Card>
 
         <Card style={{ marginTop: 16 }}>
+          <Text style={{ fontFamily: FONTS.heading, fontSize: 17, color: NOMA_COLORS.text }}>{fr.social.publicProfile}</Text>
+          <Row
+            label={user?.handle ? `@${user.handle}` : 'Pseudo non choisi'}
+            value={<Badge label={user?.is_public ? 'Public' : 'Privé'} variant={user?.is_public ? 'success' : 'neutral'} />}
+          />
+          <Button label={fr.social.edit} size="small" variant="secondary" onPress={() => navigation.navigate('ProfileEdit')} />
+          <View style={{ height: 10 }} />
+          <Button label={fr.social.findRunners} size="small" onPress={() => navigation.navigate('Runners')} />
+          {user?.is_public && user.handle ? (
+            <View style={{ marginTop: 10 }}>
+              <Button
+                label="Voir mon profil public"
+                size="small"
+                variant="secondary"
+                onPress={() => navigation.navigate('RunnerProfile', { handle: user.handle })}
+              />
+            </View>
+          ) : null}
+        </Card>
+
+        <Card style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: FONTS.heading, fontSize: 17, color: NOMA_COLORS.text }}>Synchronisation</Text>
           <Row label="Sauvegardées" value={<Text style={{ fontFamily: FONTS.bodySemiBold }}>{counts.synced}</Text>} />
           <Row label="En attente" value={<Text style={{ fontFamily: FONTS.bodySemiBold }}>{counts.pending}</Text>} />
@@ -116,7 +138,7 @@ export const ProfileScreen: React.FC = () => {
           <Text style={{ fontFamily: FONTS.heading, fontSize: 17, color: NOMA_COLORS.text }}>Données</Text>
           <Row label="Activités enregistrées" value={<Text style={{ fontFamily: FONTS.bodySemiBold }}>{summaries.length}</Text>} />
           <Text style={{ fontFamily: FONTS.body, fontSize: 13, lineHeight: 19, color: NOMA_COLORS.textSecondary }}>
-            Vos sorties, y compris le tracé GPS, sont enregistrées d'abord sur votre téléphone puis sauvegardées sur votre compte. Elles ne sont visibles que par vous.
+            Vos sorties, y compris le tracé GPS, sont enregistrées d'abord sur votre téléphone puis sauvegardées sur votre compte. Elles ne sont visibles que par vous, sauf celles que vous choisissez de partager.
           </Text>
         </Card>
       </ScrollView>

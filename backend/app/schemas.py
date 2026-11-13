@@ -43,6 +43,13 @@ class UserOut(BaseModel):
     timezone: str
     locale: str
     created_at: datetime
+    handle: str | None
+    city: str | None
+    level: str | None
+    bio: str | None
+    avatar_url: str | None
+    is_public: bool
+    privacy_zone_m: int
 
 
 class UserPatch(BaseModel):
@@ -50,6 +57,91 @@ class UserPatch(BaseModel):
     preferred_units: Literal["metric", "imperial"] | None = None
     timezone: str | None = Field(default=None, max_length=64)
     locale: str | None = Field(default=None, max_length=16)
+
+
+# ---- social profile -------------------------------------------------------
+
+Level = Literal["debutant", "intermediaire", "confirme"]
+Visibility = Literal["private", "followers", "public"]
+
+_HANDLE = re.compile(r"^[a-z0-9_]{3,30}$")
+_RESERVED_HANDLES = {"admin", "administrator", "noma", "support", "help", "me", "root", "system", "moderator"}
+
+
+class ProfilePatch(BaseModel):
+    """Fields left out are untouched. `city`, `level` and `bio` accept null to clear them."""
+
+    handle: str | None = None
+    display_name: str | None = Field(default=None, max_length=80)
+    city: str | None = Field(default=None, max_length=80)
+    level: Level | None = None
+    bio: str | None = Field(default=None, max_length=500)
+    is_public: bool | None = None
+    privacy_zone_m: int | None = Field(default=None, ge=0, le=1000)
+
+    @field_validator("handle")
+    @classmethod
+    def _handle_format(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = v.strip().lstrip("@").lower()
+        if not _HANDLE.match(v):
+            raise ValueError("handle must be 3-30 characters: letters, digits or underscore")
+        if v in _RESERVED_HANDLES:
+            raise ValueError("this handle is reserved")
+        return v
+
+    @field_validator("display_name", "city", "bio")
+    @classmethod
+    def _blank_to_none(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = v.strip()
+        return v or None
+
+    @model_validator(mode="after")
+    def _not_null(self):
+        # Only city / level / bio / display_name can be cleared; these cannot be set to null.
+        for field in ("handle", "is_public", "privacy_zone_m"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null")
+        return self
+
+
+class UserSummaryOut(BaseModel):
+    """What anyone signed in can see about a public runner in lists and search."""
+
+    id: uuid.UUID
+    handle: str
+    display_name: str | None
+    city: str | None
+    level: str | None
+    avatar_url: str | None
+    is_following: bool = False
+
+
+class UserSummaryListOut(BaseModel):
+    items: list[UserSummaryOut]
+    next_cursor: str | None = None
+
+
+class PublicProfileOut(UserSummaryOut):
+    bio: str | None
+    followers_count: int
+    following_count: int
+    activities_count: int = Field(description="Activities visible to the viewer")
+    total_distance_m: float = Field(description="Sum over the activities visible to the viewer")
+    is_me: bool
+    created_at: datetime
+
+
+class FollowStateOut(BaseModel):
+    is_following: bool
+    followers_count: int
+
+
+class VisibilityIn(BaseModel):
+    visibility: Visibility
 
 
 # ---- activities -----------------------------------------------------------
@@ -136,6 +228,7 @@ class ActivityOut(BaseModel):
     quality: dict
     client_metrics: dict | None
     created_at: datetime
+    visibility: str
 
 
 class ActivityDetailOut(ActivityOut):
@@ -144,4 +237,31 @@ class ActivityDetailOut(ActivityOut):
 
 class ActivityListOut(BaseModel):
     items: list[ActivityOut]
+    next_cursor: str | None = None
+
+
+class PublicActivityOut(BaseModel):
+    """An activity as seen by someone other than its owner: no diagnostics, no client ids."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    started_at: datetime
+    duration_s: float
+    moving_time_s: float
+    distance_m: float
+    elevation_gain_m: float
+    avg_pace_s_per_km: float | None
+    avg_speed_kmh: float
+    visibility: str
+
+
+class PublicActivityDetailOut(PublicActivityOut):
+    # The trace has the owner's privacy zone cut off both ends; empty when the run is too short.
+    points: list[PointOut] | None = None
+
+
+class PublicActivityListOut(BaseModel):
+    items: list[PublicActivityOut]
     next_cursor: str | None = None

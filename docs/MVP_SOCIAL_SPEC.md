@@ -137,3 +137,20 @@ Processus : chaque parcours a un statut (brouillon / verifie) et une source trac
 3. Hebergement et budget du backend (PostgreSQL gere, stockage des images et GPX).
 4. Arabe : dans le MVP ou juste prepare dans l'i18n ?
 5. Check-in du badge : par QR code scanne par l'organisateur, par geolocalisation au point de rendez-vous, ou par activite enregistree ?
+
+## 15. Etat d'avancement
+
+### M2 - Profils et visibilite (code ecrit le 13 novembre 2026, a valider)
+
+Choix d'implementation, parfois differents de la section 5 :
+- Le profil public est porte par des colonnes sur `users` (handle, city, level, bio, avatar_url, is_public, privacy_zone_m), pas par une table `profiles`.
+- Prive par defaut : `is_public = false`, `activities.visibility = 'private'`. Un profil non public est indistinguable d'un profil inexistant (404). Rendre un profil public exige un pseudo ; partager une activite exige un profil public.
+- La zone de confidentialite est appliquee **a la lecture** (200 m par defaut, reglable de 0 a 1000 m) : le tracé brut n'est jamais modifie en base. Une sortie plus courte que deux fois la zone est servie sans tracé. Le champ `privacy_zone_applied` n'est donc pas necessaire.
+- Un tiers ne recoit ni `client_metrics`, ni `client_activity_id`, ni la qualite du signal. Les points sont renumerotes depuis 0.
+- Suivre est immediat (pas de validation par le coureur suivi). Se desabonner reste possible apres qu'un profil est repasse en prive.
+- Ajout hors liste initiale : `GET /users?q=&city=` (recherche de coureurs publics) ; sans cela personne ne peut se trouver au lancement.
+- Pas d'envoi d'avatar : `avatar_url` existe en base mais n'est pas modifiable tant que le stockage d'images n'est pas decide (question ouverte 3).
+
+Endpoints : `PATCH /me/profile`, `GET /users`, `GET /users/{handle}`, `GET /users/{handle}/activities[/{id}]`, `POST|DELETE /users/{id}/follow`, `GET /me/following`, `GET /me/followers`, `PATCH /activities/{id}/visibility`. Migration `0002`.
+
+Mobile : ecran Profil public (pseudo, ville, niveau, zone), Coureurs (recherche, suivre), profil d'un coureur, carte Visibilite dans le detail d'une activite.

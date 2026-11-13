@@ -33,6 +33,9 @@ import { PlanEditScreen } from './screens/PlanEditScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { AuthScreen } from './screens/AuthScreen';
+import { ProfileEditScreen } from './screens/ProfileEditScreen';
+import { RunnersScreen } from './screens/RunnersScreen';
+import { RunnerProfileScreen } from './screens/RunnerProfileScreen';
 
 const ONBOARDING_KEY = 'NOMA_ONBOARDING_DONE_V1';
 
@@ -112,6 +115,15 @@ const PlanStackNavigator = () => (
   </Stack.Navigator>
 );
 
+const ProfileStackNavigator = () => (
+  <Stack.Navigator screenOptions={stackScreenOptions}>
+    <Stack.Screen name="ProfileMain" component={ProfileScreen as React.ComponentType<any>} />
+    <Stack.Screen name="ProfileEdit" component={ProfileEditScreen as React.ComponentType<any>} options={headerOptions('Profil public')} />
+    <Stack.Screen name="Runners" component={RunnersScreen as React.ComponentType<any>} options={headerOptions('Coureurs')} />
+    <Stack.Screen name="RunnerProfile" component={RunnerProfileScreen as React.ComponentType<any>} options={headerOptions('Coureur')} />
+  </Stack.Navigator>
+);
+
 const TAB_ICONS: Record<string, IconName> = {
   Home: 'home',
   Explorer: 'compass',
@@ -143,7 +155,7 @@ const TabNavigator = () => (
     <Tab.Screen name="Explorer" component={ExplorerScreen} />
     <Tab.Screen name="Activities" component={ActivitiesStackNavigator} options={{ tabBarLabel: 'Activités' }} />
     <Tab.Screen name="Plan" component={PlanStackNavigator} />
-    <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profil' }} />
+    <Tab.Screen name="Profile" component={ProfileStackNavigator} options={{ tabBarLabel: 'Profil' }} />
   </Tab.Navigator>
 );
 
