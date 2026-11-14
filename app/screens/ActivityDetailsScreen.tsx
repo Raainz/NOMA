@@ -254,7 +254,9 @@ export const ActivityDetailsScreen: React.FC<{ route: { params: { activityId: st
         <VisibilityCard activityId={activity.id} />
 
         <View style={{ height: 16 }} />
-        <Button label="Partager" onPress={share} variant="secondary" size="large" />
+        <Button label="Créer ma carte de partage" onPress={() => navigation.navigate('ShareCard', { activityId: activity.id })} size="large" />
+        <View style={{ height: 10 }} />
+        <Button label="Partager en texte" onPress={share} variant="secondary" size="large" />
       </ScrollView>
     </SafeAreaView>
   );

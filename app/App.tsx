@@ -33,6 +33,7 @@ import { PlanEditScreen } from './screens/PlanEditScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { AuthScreen } from './screens/AuthScreen';
+import { ShareCardScreen } from './screens/ShareCardScreen';
 import { ProfileEditScreen } from './screens/ProfileEditScreen';
 import { RunnersScreen } from './screens/RunnersScreen';
 import { RunnerProfileScreen } from './screens/RunnerProfileScreen';
@@ -79,7 +80,10 @@ const headerOptions = (title: string) => ({
 });
 
 const detailsScreen = (
-  <Stack.Screen name="ActivityDetails" component={DetailsScreen} options={headerOptions('Activité')} />
+  <>
+    <Stack.Screen name="ActivityDetails" component={DetailsScreen} options={headerOptions('Activité')} />
+    <Stack.Screen name="ShareCard" component={ShareCardScreen as React.ComponentType<any>} options={headerOptions('Carte de partage')} />
+  </>
 );
 
 const HomeStackNavigator = () => (

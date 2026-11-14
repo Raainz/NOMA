@@ -178,3 +178,10 @@ Choix d'implementation, parfois differents de la section 5 :
 Endpoints : `PATCH /me/profile`, `GET /users`, `GET /users/{handle}`, `GET /users/{handle}/activities[/{id}]`, `POST|DELETE /users/{id}/follow`, `GET /me/following`, `GET /me/followers`, `PATCH /activities/{id}/visibility`. Migration `0002`.
 
 Mobile : ecran Profil public (pseudo, ville, niveau), Coureurs (recherche, suivre), profil d'un coureur, carte Visibilite dans le detail d'une activite.
+
+### M3 - Carte de partage d'activite (14 novembre 2026, a valider sur telephone)
+
+- Ecran "Carte de partage" depuis le detail d'une activite : formats story 9:16 et carre 1:1, themes sombre et clair, option "afficher le trace". Contenu : nom, distance, temps, allure, trace stylise, marque NOMA. **Aucune date, aucun lieu.**
+- Fichiers : `app/share/shareCard.ts` (calculs purs, testes dans `__tests__/shareCard.test.ts`), `app/share/ShareCard.tsx` (rendu SVG), `app/screens/ShareCardScreen.tsx`.
+- La capture en image et le partage demandent deux paquets : `npx expo install react-native-view-shot expo-sharing`. Sans eux, l'ecran fonctionne et partage les chiffres en texte.
+- A faire ensuite : passe de design du visuel (guide de marque), puis creation et decouverte de sorties (backend `events`, inscription, liste des participants).
