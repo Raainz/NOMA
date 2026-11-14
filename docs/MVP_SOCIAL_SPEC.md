@@ -26,8 +26,8 @@ Statut : brouillon v1 (13 novembre 2026). Remplace l'ordre de la feuille de rout
 | M0 - Fiabilisation | Valider l'existant sur le terrain | Tests sur 2-3 telephones Android reels, mesures batterie et precision, correctifs. Aucune nouvelle fonctionnalite sociale avant. |
 | M1 - Import | Eviter le demarrage a vide | Import GPX/FIT et Strava (export d'archive puis API), deduplication, export GPX. |
 | M2 - Profils et visibilite | Fondation sociale | Profil public, visibilite des activites (prive / abonnes / public), zone de confidentialite, suivre un runner. |
-| M3 - Runs et evenements | Raison de venir | Creation et decouverte de runs sociales et d'evenements, inscription, liste des participants, rappels. |
-| M4 - Clubs et organisateurs | Point d'entree communautaire | Clubs, roles, runs recurrentes, presences (check-in), communication aux membres. |
+| M3 - Runs et evenements | Raison de venir | Creation et decouverte de runs sociales et d'evenements, inscription, liste des participants, rappels, page web publique par evenement, **carte de partage d'activite** (section 13.1). |
+| M4 - Clubs et organisateurs | Point d'entree communautaire | Clubs, roles, runs recurrentes, presences (check-in), communication aux membres, **defis et classements de club** (section 13.3). |
 | M5 - Catalogue de parcours | Contenu local | Parcours valides (OSM + contributions), fiches, GPX, filtres par ville et distance. |
 | M6 - Stabilisation et lancement | Pilote Tunis | Moderation, signalement, monitoring, notifications, beta fermee avec clubs partenaires. |
 | Plus tard | Hors MVP | Fil d'actualite, likes et commentaires, paiement en ligne, plans d'entrainement, chaussures, partage de position en direct, moteur de generation de parcours, NOMA AI, Gear. |
@@ -99,7 +99,7 @@ Processus : chaque parcours a un statut (brouillon / verifie) et une source trac
 
 ## 10. Confidentialite, securite, moderation
 
-- Activites privees par defaut ; zone de confidentialite (masquage des X premiers et derniers metres) appliquee avant toute publication.
+- Activites privees par defaut ; zone de confidentialite (masquage des X premiers et derniers metres, 200 m par defaut, reglable) appliquee a la lecture pour les autres utilisateurs. Pas d'ecran de consentement dedie : l'information passe par la politique de confidentialite (decision 5).
 - Lieu de rendez-vous des runs : point public ; adresse exacte seulement apres inscription si l'organisateur le demande.
 - Profils organisateurs verifies (badge) pour les clubs et influenceurs partenaires.
 - Signalement et suppression de contenu, journal de moderation, suppression de compte et export des donnees.
@@ -120,15 +120,38 @@ Processus : chaque parcours a un statut (brouillon / verifie) et une source trac
 3. **Inscription aux evenements** : liste interne gratuite (pas de paiement, pas de simple lien externe). `external_registration_url` reste optionnel pour les courses officielles.
 4. **Strava** : archive d'export + import GPX/FIT au MVP (M1). OAuth reporte apres le pilote, a reevaluer apres lecture des conditions d'usage a jour.
 
-## 13. Badge de finish et partage Instagram
+Decisions du 14 novembre 2026 :
 
-- A la fin d'une run sociale (check-in valide ou activite liee a l'evenement) : generation d'une **carte de partage** (image) avec nom de l'evenement, date, distance, temps, trace stylisee, logo NOMA, avatar de l'organisateur.
+5. **Consentement de partage** : pas d'ecran de consentement dedie dans l'app, le partage est un choix du coureur. L'information (la localisation est collectee ; les sorties partagees peuvent montrer le depart et l'arrivee) figure dans la politique de confidentialite et les fiches des stores. La zone de confidentialite reste un reglage par defaut (200 m, modifiable de 0 a 1000 m). Le message marketing devient "tu decides de ce que tu partages", et non "ta maison reste privee".
+6. **Cartes et badges** : la carte de partage de fin d'activite est elargie a toute activite, comme chez Strava, et **ne montre pas la date**. Badges de finisher sur le profil pour les evenements NOMA. Defis et classements internes aux clubs en M4 (section 13).
+7. **Gamification** : sobre et collective (badges, series hebdomadaires, defis de club). Pas de classement public general au MVP.
+
+## 13. Cartes de partage, badges et defis de club
+
+Trois mecanismes distincts, du plus simple au plus communautaire.
+
+### 13.1 Carte de partage d'activite (M3)
+
+- Generee apres **toute activite terminee** (pas seulement un evenement), comme la carte de fin de course de Strava : chaque coureur a une raison de partager chaque semaine.
+- Contenu : nom de l'activite, distance, temps, allure, trace stylisee, logo NOMA. **Sans date.** (Decision du 14 novembre 2026.)
 - Formats : story 9:16 et publication 1:1 ; fonds clair/sombre ; palette de marque (Sand, Carbon, lime, corail ; Manrope et Inter).
 - Partage via la feuille de partage native vers Instagram, WhatsApp, etc. Aucun envoi automatique ; l'utilisateur choisit.
-- Respect de la confidentialite : la trace affichee applique la zone de confidentialite ; option "sans trace".
-- Badge persistant dans le profil (collection de badges "finisher").
-- Technique : rendu cote mobile (react-native-svg deja installe + capture en image), sans service tiers. Aucun badge ne doit exposer de donnees privees.
-- Le visuel est un enjeu de marque : prevoir un passage de design dedie (maquettes validees par le guide de marque) avant l'implementation.
+- La trace affichee peut respecter la zone de confidentialite ou etre masquee ("sans trace"), au choix du coureur. Le coureur voit toujours son propre tracé complet.
+- Technique : rendu cote mobile (react-native-svg deja installe + capture en image), sans service tiers. La carte n'expose que ce que le coureur choisit de montrer.
+- Le visuel est un enjeu de marque : passe de design dedie (guide de marque) avant l'implementation.
+
+### 13.2 Badge de finisher (M3-M4)
+
+- Decerne apres une run sociale ou un evenement organise **dans NOMA** (check-in valide ou activite liee a l'evenement).
+- Collection de badges visible sur le profil public. Ce badge porte le nom de l'evenement ; la date n'y figure pas non plus.
+- Le mode de check-in reste a trancher (question ouverte 5).
+
+### 13.3 Defis et classements de club (M4)
+
+- Un club peut creer des **objectifs collectifs** (par exemple un nombre de kilometres commun sur un mois) et des **classements internes**, pour encourager ses membres a enregistrer leurs sorties dans NOMA.
+- Pas de classement public general au MVP : plus decourageant pour les debutants et peu utile avec peu d'utilisateurs.
+- Cas d'usage a tester : defis d'equipe entre collegues d'une entreprise (programmes bien-etre), piste de revenu future.
+- Regle de bon sens : objectifs de regularite plutot que de volume extreme, pour ne pas pousser a la blessure. Series hebdomadaires possibles ("3 semaines de suite avec une sortie").
 
 ## 14. Questions ouvertes
 
