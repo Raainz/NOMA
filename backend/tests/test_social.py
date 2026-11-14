@@ -16,7 +16,6 @@ def go_public(client, h, handle, **extra):
 
 
 def sync(client, h, client_id="a1", n=400, **kw):
-    # n=400 points at ~3.3 m each is ~1.3 km: longer than two privacy zones.
     r = client.post(SYNC, headers=h, json=make_activity(client_id, n=n, **kw))
     assert r.status_code == 201, r.text
     return r.json()
@@ -32,7 +31,7 @@ def set_visibility(client, h, activity_id, visibility):
 def test_everything_is_private_by_default(client):
     h = headers(client, "a@example.com")
     me = client.get(f"{API}/me", headers=h).json()
-    assert me["is_public"] is False and me["handle"] is None and me["privacy_zone_m"] == 200
+    assert me["is_public"] is False and me["handle"] is None
     assert sync(client, h)["visibility"] == "private"
 
 
@@ -62,7 +61,6 @@ def test_profile_fields_and_clearing(client):
     cleared = client.patch(f"{API}/me/profile", headers=h, json={"city": None, "level": None}).json()
     assert cleared["city"] is None and cleared["level"] is None and cleared["bio"] == "Courir tôt"
     assert client.patch(f"{API}/me/profile", headers=h, json={"level": "pro"}).status_code == 422
-    assert client.patch(f"{API}/me/profile", headers=h, json={"privacy_zone_m": 5000}).status_code == 422
 
 
 # ---- public profile visibility ----------------------------------------------
@@ -87,7 +85,7 @@ def test_public_profile_does_not_leak_email_or_settings(client):
     go_public(client, a, "runner_one", city="Tunis", level="intermediaire")
     body = client.get(f"{API}/users/runner_one", headers=b).json()
     assert body["city"] == "Tunis" and body["is_me"] is False and body["is_following"] is False
-    assert not {"email", "privacy_zone_m", "timezone", "is_public"} & set(body)
+    assert not {"email", "timezone", "is_public"} & set(body)
 
 
 # ---- follow -----------------------------------------------------------------
@@ -238,10 +236,10 @@ def test_going_private_hides_previously_public_activities(client):
     assert client.get(f"{API}/users/runner_o/activities/{act['id']}", headers=other).status_code == 404
 
 
-def test_public_activity_hides_diagnostics_and_trims_privacy_zone(client):
+def test_public_activity_hides_diagnostics_and_shows_the_full_trace(client):
     owner, other = headers(client, "o@example.com"), headers(client, "x@example.com")
     go_public(client, owner, "runner_o")
-    act = sync(client, owner)
+    act = sync(client, owner, n=60)
     set_visibility(client, owner, act["id"], "public")
 
     own_view = client.get(f"{API}/activities/{act['id']}", headers=owner, params={"include_points": True}).json()
@@ -250,38 +248,12 @@ def test_public_activity_hides_diagnostics_and_trims_privacy_zone(client):
     ).json()
 
     assert not {"client_metrics", "client_activity_id", "quality", "algorithm_version"} & set(seen)
-    assert 0 < len(seen["points"]) < len(own_view["points"])
-    first = own_view["points"][0]
-    assert all(p["latitude"] != first["latitude"] for p in seen["points"][:1])
-    # The nearest remaining point is about the zone distance from the real start (northbound line).
-    metres = (seen["points"][0]["latitude"] - first["latitude"]) * 111_195
-    assert 195 <= metres <= 215
-    # Points are renumbered, so the trimmed count is not leaked through `seq`.
-    assert seen["points"][0]["seq"] == 0
+    # Sharing is the owner's choice: others get the trace exactly as recorded.
+    assert [(p["seq"], p["latitude"], p["longitude"]) for p in seen["points"]] == [
+        (p["seq"], p["latitude"], p["longitude"]) for p in own_view["points"]
+    ]
     # Without include_points no trace is returned at all.
     assert client.get(f"{API}/users/runner_o/activities/{act['id']}", headers=other).json()["points"] is None
-
-
-def test_short_run_shows_no_trace_to_others(client):
-    owner, other = headers(client, "o@example.com"), headers(client, "x@example.com")
-    go_public(client, owner, "runner_o")
-    act = sync(client, owner, n=60)  # ~200 m: entirely inside the privacy zone
-    set_visibility(client, owner, act["id"], "public")
-    seen = client.get(
-        f"{API}/users/runner_o/activities/{act['id']}", headers=other, params={"include_points": True}
-    ).json()
-    assert seen["points"] == []
-
-
-def test_zone_can_be_widened_or_disabled(client):
-    owner, other = headers(client, "o@example.com"), headers(client, "x@example.com")
-    go_public(client, owner, "runner_o", privacy_zone_m=0)
-    act = sync(client, owner, n=60)
-    set_visibility(client, owner, act["id"], "public")
-    seen = client.get(
-        f"{API}/users/runner_o/activities/{act['id']}", headers=other, params={"include_points": True}
-    ).json()
-    assert len(seen["points"]) == 60
 
 
 def test_deleting_an_activity_removes_it_from_the_public_list(client):

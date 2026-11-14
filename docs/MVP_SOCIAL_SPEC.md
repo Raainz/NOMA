@@ -14,7 +14,7 @@ Statut : brouillon v1 (13 novembre 2026). Remplace l'ordre de la feuille de rout
 
 1. Le social ne doit pas dependre de la taille de la communaute : chaque ecran doit avoir de la valeur avec peu d'utilisateurs.
 2. Les organisateurs sont des utilisateurs a part entiere : outils de creation, d'inscription et de suivi des presences.
-3. Prive par defaut : aucune activite publique sans choix explicite, zone de confidentialite sur les traces.
+3. Prive par defaut : aucune activite publique sans choix explicite du coureur.
 4. Hors ligne d'abord (deja le cas pour l'enregistrement et la synchronisation).
 5. Francais maintenant, arabe (RTL) prevu dans l'i18n des le depart.
 6. Pas de scraping de plateformes tierces (voir section 9).
@@ -25,7 +25,7 @@ Statut : brouillon v1 (13 novembre 2026). Remplace l'ordre de la feuille de rout
 |---|---|---|
 | M0 - Fiabilisation | Valider l'existant sur le terrain | Tests sur 2-3 telephones Android reels, mesures batterie et precision, correctifs. Aucune nouvelle fonctionnalite sociale avant. |
 | M1 - Import | Eviter le demarrage a vide | Import GPX/FIT et Strava (export d'archive puis API), deduplication, export GPX. |
-| M2 - Profils et visibilite | Fondation sociale | Profil public, visibilite des activites (prive / abonnes / public), zone de confidentialite, suivre un runner. |
+| M2 - Profils et visibilite | Fondation sociale | Profil public, visibilite des activites (prive / abonnes / public), suivre un runner. |
 | M3 - Runs et evenements | Raison de venir | Creation et decouverte de runs sociales et d'evenements, inscription, liste des participants, rappels, page web publique par evenement, **carte de partage d'activite** (section 13.1). |
 | M4 - Clubs et organisateurs | Point d'entree communautaire | Clubs, roles, runs recurrentes, presences (check-in), communication aux membres, **defis et classements de club** (section 13.3). |
 | M5 - Catalogue de parcours | Contenu local | Parcours valides (OSM + contributions), fiches, GPX, filtres par ville et distance. |
@@ -47,7 +47,7 @@ Existant : `users`, `refresh_tokens`, `activities`, `activity_points`.
 | Table | Champs principaux |
 |---|---|
 | `profiles` (ou colonnes sur `users`) | handle unique, display_name, city, level (debutant / intermediaire / confirme), bio, avatar_url, is_public |
-| `activities` (ajouts) | visibility (private / followers / public), privacy_zone_applied, source (app / gpx / strava), external_id |
+| `activities` (ajouts) | visibility (private / followers / public), source (app / gpx / strava), external_id |
 | `follows` | follower_id, followed_id, created_at, unique(follower, followed) |
 | `clubs` | id, name, slug, city, description, logo_url, visibility, created_by |
 | `club_members` | club_id, user_id, role (owner / organizer / member), joined_at |
@@ -99,7 +99,7 @@ Processus : chaque parcours a un statut (brouillon / verifie) et une source trac
 
 ## 10. Confidentialite, securite, moderation
 
-- Activites privees par defaut ; zone de confidentialite (masquage des X premiers et derniers metres, 200 m par defaut, reglable) appliquee a la lecture pour les autres utilisateurs. Pas d'ecran de consentement dedie : l'information passe par la politique de confidentialite (decision 5).
+- Activites privees par defaut. Pas de zone de confidentialite ni d'ecran de consentement dedie : une activite partagee montre son trace complet, et l'information passe par la politique de confidentialite et les fiches des stores (decisions 5 et 8).
 - Lieu de rendez-vous des runs : point public ; adresse exacte seulement apres inscription si l'organisateur le demande.
 - Profils organisateurs verifies (badge) pour les clubs et influenceurs partenaires.
 - Signalement et suppression de contenu, journal de moderation, suppression de compte et export des donnees.
@@ -122,9 +122,10 @@ Processus : chaque parcours a un statut (brouillon / verifie) et une source trac
 
 Decisions du 14 novembre 2026 :
 
-5. **Consentement de partage** : pas d'ecran de consentement dedie dans l'app, le partage est un choix du coureur. L'information (la localisation est collectee ; les sorties partagees peuvent montrer le depart et l'arrivee) figure dans la politique de confidentialite et les fiches des stores. La zone de confidentialite reste un reglage par defaut (200 m, modifiable de 0 a 1000 m). Le message marketing devient "tu decides de ce que tu partages", et non "ta maison reste privee".
+5. **Consentement de partage** : pas d'ecran de consentement dedie dans l'app, le partage est un choix du coureur. L'information (la localisation est collectee ; les sorties partagees peuvent montrer le depart et l'arrivee) figure dans la politique de confidentialite et les fiches des stores. Le message marketing devient "tu decides de ce que tu partages", et non "ta maison reste privee".
 6. **Cartes et badges** : la carte de partage de fin d'activite est elargie a toute activite, comme chez Strava, et **ne montre pas la date**. Badges de finisher sur le profil pour les evenements NOMA. Defis et classements internes aux clubs en M4 (section 13).
 7. **Gamification** : sobre et collective (badges, series hebdomadaires, defis de club). Pas de classement public general au MVP.
+8. **Zone de confidentialite supprimee** : le masquage du debut et de la fin des traces (200 m par defaut) est retire du backend et de l'app. Un coureur qui partage une activite montre son trace complet ; la responsabilite et l'information relevent de la politique de confidentialite.
 
 ## 13. Cartes de partage, badges et defis de club
 
@@ -136,7 +137,7 @@ Trois mecanismes distincts, du plus simple au plus communautaire.
 - Contenu : nom de l'activite, distance, temps, allure, trace stylisee, logo NOMA. **Sans date.** (Decision du 14 novembre 2026.)
 - Formats : story 9:16 et publication 1:1 ; fonds clair/sombre ; palette de marque (Sand, Carbon, lime, corail ; Manrope et Inter).
 - Partage via la feuille de partage native vers Instagram, WhatsApp, etc. Aucun envoi automatique ; l'utilisateur choisit.
-- La trace affichee peut respecter la zone de confidentialite ou etre masquee ("sans trace"), au choix du coureur. Le coureur voit toujours son propre tracé complet.
+- Option "sans trace" au choix du coureur ; sinon le trace complet est affiche.
 - Technique : rendu cote mobile (react-native-svg deja installe + capture en image), sans service tiers. La carte n'expose que ce que le coureur choisit de montrer.
 - Le visuel est un enjeu de marque : passe de design dedie (guide de marque) avant l'implementation.
 
@@ -166,14 +167,14 @@ Trois mecanismes distincts, du plus simple au plus communautaire.
 ### M2 - Profils et visibilite (code ecrit le 13 novembre 2026, a valider)
 
 Choix d'implementation, parfois differents de la section 5 :
-- Le profil public est porte par des colonnes sur `users` (handle, city, level, bio, avatar_url, is_public, privacy_zone_m), pas par une table `profiles`.
+- Le profil public est porte par des colonnes sur `users` (handle, city, level, bio, avatar_url, is_public), pas par une table `profiles`.
 - Prive par defaut : `is_public = false`, `activities.visibility = 'private'`. Un profil non public est indistinguable d'un profil inexistant (404). Rendre un profil public exige un pseudo ; partager une activite exige un profil public.
-- La zone de confidentialite est appliquee **a la lecture** (200 m par defaut, reglable de 0 a 1000 m) : le tracé brut n'est jamais modifie en base. Une sortie plus courte que deux fois la zone est servie sans tracé. Le champ `privacy_zone_applied` n'est donc pas necessaire.
-- Un tiers ne recoit ni `client_metrics`, ni `client_activity_id`, ni la qualite du signal. Les points sont renumerotes depuis 0.
+- Zone de confidentialite : implementee puis **supprimee** le 14 novembre 2026 (decision 8). Les autres voient le tracé complet d'une activite partagee.
+- Un tiers ne recoit ni `client_metrics`, ni `client_activity_id`, ni la qualite du signal.
 - Suivre est immediat (pas de validation par le coureur suivi). Se desabonner reste possible apres qu'un profil est repasse en prive.
 - Ajout hors liste initiale : `GET /users?q=&city=` (recherche de coureurs publics) ; sans cela personne ne peut se trouver au lancement.
 - Pas d'envoi d'avatar : `avatar_url` existe en base mais n'est pas modifiable tant que le stockage d'images n'est pas decide (question ouverte 3).
 
 Endpoints : `PATCH /me/profile`, `GET /users`, `GET /users/{handle}`, `GET /users/{handle}/activities[/{id}]`, `POST|DELETE /users/{id}/follow`, `GET /me/following`, `GET /me/followers`, `PATCH /activities/{id}/visibility`. Migration `0002`.
 
-Mobile : ecran Profil public (pseudo, ville, niveau, zone), Coureurs (recherche, suivre), profil d'un coureur, carte Visibilite dans le detail d'une activite.
+Mobile : ecran Profil public (pseudo, ville, niveau), Coureurs (recherche, suivre), profil d'un coureur, carte Visibilite dans le detail d'une activite.

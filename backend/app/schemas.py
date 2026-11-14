@@ -49,7 +49,6 @@ class UserOut(BaseModel):
     bio: str | None
     avatar_url: str | None
     is_public: bool
-    privacy_zone_m: int
 
 
 class UserPatch(BaseModel):
@@ -77,7 +76,6 @@ class ProfilePatch(BaseModel):
     level: Level | None = None
     bio: str | None = Field(default=None, max_length=500)
     is_public: bool | None = None
-    privacy_zone_m: int | None = Field(default=None, ge=0, le=1000)
 
     @field_validator("handle")
     @classmethod
@@ -102,7 +100,7 @@ class ProfilePatch(BaseModel):
     @model_validator(mode="after")
     def _not_null(self):
         # Only city / level / bio / display_name can be cleared; these cannot be set to null.
-        for field in ("handle", "is_public", "privacy_zone_m"):
+        for field in ("handle", "is_public"):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f"{field} cannot be null")
         return self
@@ -258,7 +256,7 @@ class PublicActivityOut(BaseModel):
 
 
 class PublicActivityDetailOut(PublicActivityOut):
-    # The trace has the owner's privacy zone cut off both ends; empty when the run is too short.
+    # The full trace, as recorded. Sharing an activity is the owner's choice (visibility).
     points: list[PointOut] | None = None
 
 

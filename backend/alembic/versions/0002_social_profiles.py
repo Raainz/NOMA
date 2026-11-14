@@ -22,7 +22,6 @@ def upgrade() -> None:
     op.add_column("users", sa.Column("bio", sa.Text()))
     op.add_column("users", sa.Column("avatar_url", sa.String(500)))
     op.add_column("users", sa.Column("is_public", sa.Boolean(), nullable=False, server_default=sa.false()))
-    op.add_column("users", sa.Column("privacy_zone_m", sa.Integer(), nullable=False, server_default="200"))
     op.create_index("ix_users_handle", "users", ["handle"], unique=True)
 
     op.add_column(
@@ -45,5 +44,5 @@ def downgrade() -> None:
         batch.drop_column("visibility")
     op.drop_index("ix_users_handle", table_name="users")
     with op.batch_alter_table("users") as batch:
-        for col in ("privacy_zone_m", "is_public", "avatar_url", "bio", "level", "city", "handle"):
+        for col in ("is_public", "avatar_url", "bio", "level", "city", "handle"):
             batch.drop_column(col)

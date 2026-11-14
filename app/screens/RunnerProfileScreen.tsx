@@ -1,6 +1,6 @@
 /**
  * A runner's public profile: summary, follow button and the activities they chose to share.
- * What is shown already respects the owner's visibility choices and privacy zone (server side).
+ * What is shown already respects the owner's visibility choices (server side).
  */
 
 import React, { useCallback, useEffect, useState } from 'react';

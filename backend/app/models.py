@@ -67,8 +67,6 @@ class User(Base):
     bio: Mapped[str | None] = mapped_column(Text)
     avatar_url: Mapped[str | None] = mapped_column(String(500))
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
-    # Metres hidden at both ends of a trace before anyone else can see it.
-    privacy_zone_m: Mapped[int] = mapped_column(Integer, default=200)
 
 
 class Follow(Base):

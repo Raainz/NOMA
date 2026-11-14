@@ -1,5 +1,5 @@
 /**
- * Public profile settings: handle, city, level, visibility of the profile and privacy zone.
+ * Public profile settings: handle, city, level and visibility of the profile.
  * Nothing is public until the user explicitly turns it on.
  */
 
@@ -14,7 +14,6 @@ import { Chip } from '../components/System';
 import { socialErrorMessage } from './socialShared';
 
 const LEVELS: Level[] = ['debutant', 'intermediaire', 'confirme'];
-const ZONES = [0, 100, 200, 500];
 
 const Label: React.FC<{ text: string }> = ({ text }) => (
   <Text style={{ fontFamily: FONTS.bodyMedium, fontSize: 13, color: NOMA_COLORS.textSecondary, marginTop: 14, marginBottom: 6 }}>
@@ -30,7 +29,6 @@ export const ProfileEditScreen: React.FC<{ navigation: any }> = ({ navigation })
   const [level, setLevel] = useState<Level | null>(user?.level ?? null);
   const [bio, setBio] = useState(user?.bio ?? '');
   const [isPublic, setIsPublic] = useState(user?.is_public ?? false);
-  const [zone, setZone] = useState(user?.privacy_zone_m ?? 200);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +48,6 @@ export const ProfileEditScreen: React.FC<{ navigation: any }> = ({ navigation })
         level,
         bio: bio.trim() || null,
         is_public: isPublic,
-        privacy_zone_m: zone,
       });
       await refreshUser();
       Alert.alert(fr.social.saved);
@@ -95,18 +92,6 @@ export const ProfileEditScreen: React.FC<{ navigation: any }> = ({ navigation })
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <Text style={{ flex: 1, fontFamily: FONTS.bodyMedium, fontSize: 14, color: NOMA_COLORS.text }}>{fr.social.makePublic}</Text>
             <Switch value={isPublic} onValueChange={setIsPublic} accessibilityLabel={fr.social.makePublic} />
-          </View>
-        </Card>
-
-        <Card style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: FONTS.heading, fontSize: 17, color: NOMA_COLORS.text }}>{fr.social.privacyZone}</Text>
-          <Text style={{ fontFamily: FONTS.body, fontSize: 13, lineHeight: 19, color: NOMA_COLORS.textSecondary, marginTop: 6 }}>
-            {fr.social.privacyZoneHelp}
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-            {ZONES.map((z) => (
-              <Chip key={z} label={z === 0 ? 'Aucune' : `${z} m`} selected={zone === z} onPress={() => setZone(z)} />
-            ))}
           </View>
         </Card>
 

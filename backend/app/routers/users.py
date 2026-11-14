@@ -24,8 +24,6 @@ from app.schemas import (
     UserSummaryListOut,
     UserSummaryOut,
 )
-from app.services.metrics import Point
-from app.services.privacy import apply_privacy_zone
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -188,7 +186,7 @@ def get_runner_activity(
     viewer: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """An activity as others see it. The owner gets the same trimmed trace here, as a preview."""
+    """An activity as others see it (the owner can use this to preview what is shared)."""
     owner = _by_handle(db, viewer, handle)
     visible = _allowed_visibilities(viewer, owner, _is_follower(db, viewer, owner))
     stmt = select(Activity).where(
@@ -204,21 +202,17 @@ def get_runner_activity(
     # Build from the public fields only: validating the ORM object directly would read `activity.points`.
     out = PublicActivityDetailOut(**PublicActivityOut.model_validate(activity).model_dump(), points=None)
     if include_points:
-        trimmed = apply_privacy_zone(
-            [Point(p.ts_ms, p.latitude, p.longitude, p.altitude, p.accuracy, p.speed) for p in activity.points],
-            owner.privacy_zone_m,
-        )
         out.points = [
             PointOut(
-                seq=i,
-                timestamp=p.t_ms,
-                latitude=p.lat,
-                longitude=p.lon,
-                altitude=p.alt,
+                seq=p.seq,
+                timestamp=p.ts_ms,
+                latitude=p.latitude,
+                longitude=p.longitude,
+                altitude=p.altitude,
                 accuracy=p.accuracy,
                 speed=p.speed,
             )
-            for i, p in enumerate(trimmed)
+            for p in activity.points
         ]
     return out
 

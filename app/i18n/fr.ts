@@ -200,9 +200,6 @@ export const fr = {
     level: 'Niveau',
     levels: { debutant: 'Débutant', intermediaire: 'Intermédiaire', confirme: 'Confirmé' },
     makePublic: 'Profil visible par les autres coureurs',
-    privacyZone: 'Zone de confidentialité',
-    privacyZoneHelp:
-      "Le début et la fin de vos tracés partagés sont masqués sur cette distance, pour ne pas révéler votre domicile. Une sortie plus courte que deux fois cette distance est partagée sans tracé.",
     save: 'Enregistrer',
     saved: 'Profil enregistré',
     findRunners: 'Trouver des coureurs',
@@ -221,8 +218,8 @@ export const fr = {
     visibilityLevels: { private: 'Privée', followers: 'Abonnés', public: 'Publique' },
     visibilityHelp: {
       private: 'Vous seul voyez cette sortie.',
-      followers: 'Vos abonnés voient cette sortie, sans le début et la fin du tracé.',
-      public: 'Tous les coureurs voient cette sortie, sans le début et la fin du tracé.',
+      followers: 'Vos abonnés voient cette sortie, avec son tracé complet.',
+      public: 'Tous les coureurs voient cette sortie, avec son tracé complet.',
     },
     needsSync: "Cette sortie n'est pas encore sauvegardée sur votre compte : elle pourra être partagée après la synchronisation.",
     needsPublicProfile: "Rendez d'abord votre profil public pour partager des sorties.",

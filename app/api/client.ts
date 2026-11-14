@@ -28,7 +28,6 @@ export interface ApiUser {
   bio: string | null;
   avatar_url: string | null;
   is_public: boolean;
-  privacy_zone_m: number;
 }
 
 export type Level = 'debutant' | 'intermediaire' | 'confirme';
@@ -42,7 +41,6 @@ export interface ProfilePatch {
   level?: Level | null;
   bio?: string | null;
   is_public?: boolean;
-  privacy_zone_m?: number;
 }
 
 export interface RunnerSummary {
